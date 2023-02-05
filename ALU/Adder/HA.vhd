@@ -24,6 +24,6 @@ begin       -- note that all of the following statements are concurrent
        
 
     y <=  x1 xor x2; -- sum
-    cout <=  ; x1 and x2 -- carry
+    cout <=  x1 and x2; -- carry
     
  end structure;
