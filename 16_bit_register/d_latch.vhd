@@ -19,4 +19,4 @@ notQ <= Qinternal nor ED;
 
 Q <= Qinternal;
 
-end Structure
+end Structure;
