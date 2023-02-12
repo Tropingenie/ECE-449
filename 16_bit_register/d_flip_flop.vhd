@@ -17,20 +17,19 @@ port(
     Q : out std_logic);
 end FlipFlop;
 
-architecture Behavioral of FlipFlop is:
+architecture Behavioral of FlipFlop is
 
 component DLatch is
 port(
     D, E : in std_logic;
-    Q : out std_logic
-);
+    Q : out std_logic);
 end component;
 
 signal master_out, not_clk : std_logic;
 
 begin
-not_clk = not clk;
-master: DLatch port map(D=>D, clk=>not_clk, Q=>master_out);
-slave: DLatch port map(D=>master_out, clk=>clk, Q=>Q);
+not_clk <= not clk;
+master: DLatch port map(D=>D, E=>not_clk, Q=>master_out);
+slave: DLatch port map(D=>master_out, E=>clk, Q=>Q);
 
 end Behavioral;

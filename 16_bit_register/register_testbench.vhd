@@ -36,6 +36,14 @@ begin
     wait for 20 ns;
     clk <= '0';
     assert output = x"FFFF" report "T1 Mismatch: " & to_hstring(output) severity failure;
+    
+
+    input <= x"1234";
+    wait for 20 ns;
+    clk <= '1';
+    wait for 20 ns;
+    clk <= '0';
+    assert output = x"1234" report "T1 Mismatch: " & to_hstring(output) severity failure;
        
     assert false report "Tests done." severity note;
     wait;
