@@ -56,16 +56,10 @@ component RegisterArbitrator
 --not implemented yet
 end component
 
-signal
-    opcode
-    ra
-    rb
-    rc
-    imm
-    AR
-
-    --ALU I/O
-    alu_mode
+signal  opcode          : std_logic_vector(6 downto 0);
+signal  ra, rb, rc      : std_logic_vector(2 downto 0);
+signal  imm             : std_logic_vector(3 downto 0);
+signal  AR              : std_logic_vector(15 downto 0);
 
 
 end Behaviour;
