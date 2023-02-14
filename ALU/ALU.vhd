@@ -28,19 +28,12 @@ end ALU;
 architecture Behavioral of ALU is
 
     --SIGNAL DECLARATIONS HERE--
-    signal data1 : signed(15 downto 0); --in1 signed 16 bit vector
-    signal data2 : signed(15 downto 0); --in2 signed 16 bit vector
-    signal data3 : signed(15 downto 0); --result 16 bit signed vector
-    signal shift_amt : integer;         --integer amount to shift
+    signal data1     : signed(15 downto 0); --in1 signed 16 bit vector
+    signal data2     : signed(15 downto 0); --in2 signed 16 bit vector
+    signal data3     : signed(15 downto 0); --result 16 bit signed vector
+    signal shift_amt : integer;             --integer amount to shift
         
     --COMPONENT DECLARATIONS HERE--
-    component BarrelShifter is          --UNUSED ATM
-        port(
-         direction : in std_logic;      -- Right shift is "positive" == one
-         shift_amount : in std_logic_vector(3 downto 0);
-         rin : in std_logic_vector(15 downto 0);
-         rout : out std_logic_vector(15 downto 0));
-    end component;
     
 begin
 
@@ -57,23 +50,43 @@ begin
         case alu_mode is 
         
             when "000" =>
-                result <= (others => '0');   --NOP
+                result <= (others => '0');                  --NOP
                 
-            when "001" => 
-                data3 <= data1 + data2;      --ADD op
+            when "001" =>                                   --ADD op
+                if ((data1) + (data2'LENGTH))> integer(16) then
+                    o_flag <= '1';
+                    data3 <= data1 + data2;                     
+                else
+                    data3 <= data1 + data2;                     
+                end if;
                 
-            when "010" => 
-                data3 <= data1 - data2;    --SUB op
+            when "010" =>                                   --SUB op
+                if( to_integer(signed(data2)) > to_integer(signed(data1)) ) then
+                    n_flag <= '1';
+                elsif( to_integer(signed(data1)) - to_integer(signed(data2)) = 0 ) then
+                    o_flag <= '1';
+                else
+                    data3 <= data1 - data2;
+                end if;                   
                 
-            when "011" => 
-                data3 <= data1 * data2;   --Need to find out where overflow goes
+            when "011" =>                                   --MULT op
+                if( (to_integer(signed(data1))) * (to_integer(signed(data2))) > integer(65536)) then
+                    o_flag <= '1';
+                elsif( to_integer(signed(data1)) * to_integer(signed(data2)) = 0) then
+                    z_flag <= '1';
+                elsif (to_integer(signed(data1)) < 0)then
+                    n_flag <= '1';
+                elsif (to_integer(signed(data2)) < 0) then
+                    n_flag <= '1';
+                else
+                    data3 <= data1 * data2;                     
+                end if;
               
             when "100" => 
                 data3 <= data1 NAND data2;                  --NAND op
                 
             when "101" =>                                   --SHFT R op
                 shift_amt <= to_integer(unsigned(in1(8 downto 6)));
-                
                 data3 <= SHIFT_LEFT(data1, shift_amt);
                 
             when "110" =>                                   --SHFT L op
