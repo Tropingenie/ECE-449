@@ -21,6 +21,7 @@ port (
     alu_mode : in STD_LOGIC_VECTOR(2 downto 0);   --3 bit vector that determines the ALU operation [ADD (0), ADD(1), SUB (2), MUL(3), NAND(4), SHL (5), SHR(6), TEST(7)]
     clk, rst : in STD_LOGIC;                      --clock and reset signals
     result   : out STD_LOGIC_VECTOR(15 downto 0); --3 bit result vector
+    --check : out signed(15 downto 0);
     z_flag, n_flag, o_flag: out STD_LOGIC         --zero, negative and overflow flags
     );
 end ALU;
@@ -31,31 +32,35 @@ architecture Behavioral of ALU is
     signal data1     : signed(15 downto 0); --in1 signed 16 bit vector
     signal data2     : signed(15 downto 0); --in2 signed 16 bit vector
     signal data3     : signed(15 downto 0); --result 16 bit signed vector
+    signal mult_ofr  : signed (31 downto 0);--cheat 32 bit internal register for multiply overflow
     signal shift_amt : integer;             --integer amount to shift
         
     --COMPONENT DECLARATIONS HERE--
     
 begin
 
-    data1 <= signed(in1);               --input in1 vector onto data1 as a signed bit
-    data2 <= signed(in2);               --input in2 vector onto data2 as a signed bit
+    data1 <= signed(in1(15 downto 0));               --input in1 vector onto data1 as a signed bit
+    data2 <= signed(in2(15 downto 0));               --input in2 vector onto data2 as a signed bit
     
     process(clk,rst) 
     
     begin    
     if (rst = '1') then
     result <= (others => '0');
+    z_flag <= '0';
+    n_flag <= '0';
+    o_flag <= '0';
     
     elsif(RISING_EDGE(clk)) then
         case alu_mode is 
         
             when "000" =>
-                result <= (others => '0');                  --NOP
+                data3 <= (others => '0');                   --NOP
                 
             when "001" =>                                   --ADD op
-                if ((data1) + (data2'LENGTH))> integer(16) then
+                if (data2 + data1) = 0 then
+                    data3 <= data1 + data2;
                     o_flag <= '1';
-                    data3 <= data1 + data2;                     
                 else
                     data3 <= data1 + data2;                     
                 end if;
@@ -79,7 +84,8 @@ begin
                 elsif (to_integer(signed(data2)) < 0) then
                     n_flag <= '1';
                 else
-                    data3 <= data1 * data2;                     
+                    mult_ofr <= data1 * data2;
+                    data3 <= mult_ofr(15 downto 0);                     
                 end if;
               
             when "100" => 
@@ -94,7 +100,7 @@ begin
                 data3 <= SHIFT_RIGHT(data1, shift_amt);     --currently sign extends
                 
             when "111" =>                                   --TEST Op
-                if (data1 = (others=>'0')) then
+                if (data1 = b"0000000000000000") then
                     z_flag <= '1';
                 elsif data1(15) = '1' then
                     n_flag <= '1';
@@ -105,7 +111,8 @@ begin
                 
            end case;
            
-        result <= STD_LOGIC_VECTOR(data3);
+        result <= STD_LOGIC_VECTOR(data3(15 downto 0)); --Typecast doesnt work
+        --check <= data3;                                 --REMOVE THIS
         
         end if;         
     end process; 
