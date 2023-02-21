@@ -7,9 +7,12 @@
 -- sends a "pause" signal to stop the pipeline for two
 -- register instructions.
 --
--- Ben Lyne, Kai Herrero
+-- Kai Herrero
 --
 -----------------------------------------------------------
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
 
 entity RegisterArbitrator is
 port(
