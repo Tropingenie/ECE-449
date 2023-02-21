@@ -13,8 +13,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
 entity datapath is:
-port(
-
+port();
 end datapath;
 
 begin Behaviour of datapath is
@@ -56,10 +55,11 @@ component RegisterArbitrator
 --not implemented yet
 end component
 
-signal  opcode          : std_logic_vector(6 downto 0);
-signal  ra, rb, rc      : std_logic_vector(2 downto 0);
-signal  imm             : std_logic_vector(3 downto 0);
-signal  AR              : std_logic_vector(15 downto 0);
+signal  opcode                       : std_logic_vector(6 downto 0);
+signal  ra, rb, rc                   : std_logic_vector(2 downto 0);
+signal  imm                          : std_logic_vector(3 downto 0);
+signal  AR                           : std_logic_vector(15 downto 0);
+signal  clk, half_clk, quarter_clk   : std_logic; -- various clock domains for ALU, Memory, and everything else respectively (avoids PLLs)
 
 
 end Behaviour;
