@@ -27,18 +27,34 @@ entity register_arbitrator_testbench is
 end register_arbitrator_testbench;
 
 architecture Behavioral of register_arbitrator_testbench is
-    component register_arbitrator Port(
+    component RegisterArbitrator Port(
     opcode_in   : in std_logic_vector(6 downto 0);  -- opcode of the "current" instruction
     opcode_back : in std_logic_vector(6 downto 0);  -- opcode of the "writing back" instruction
-    AR_in       : in std_logic_vector(15 downto 0); -- Arithmetic result (data) from the "wiring back" instruction
-    ra          : in std_logic_vector(2 downto 0);  -- writeback register of the "writing back" instruction
-  --rd_2        : in std_logic_vector(2 downto 0);  -- Second register from "current" instruction [UNUSED]
-    clk         : in std_logic;                     -- Clock at twice the rate of the datapath
-    AR_out      : out std_logic_vector(15 downto 0);-- Output numeric result of the data
-    wr_en       : out std_logic;                    -- Write enable for writeback
-    r_sel       : out std_logic_vector(2 downto 0)  -- Selected register
-    );
+    clk         : in std_logic;
+    wr_en       : out std_logic);                   -- Write enable for writeback
+    end component;
+    
+    signal opcode_in   : std_logic_vector(6 downto 0);
+    signal opcode_back : std_logic_vector(6 downto 0);
+    signal clk         : std_logic;
+    signal wr_en       : std_logic;
+    
 begin
+
+    UUT: RegisterArbitrator port map(opcode_in=>opcode_in, opcode_back=>opcode_back, clk=>clk, wr_en=>wr_en);
+    
+    process begin   --Clocking process, 20us duty cycle
+    clk <= '0';
+    wait for 10 us;
+    clk <= '1';
+    wait for 10 us;
+    end process;
+    
+    process begin   --behavioural process
+          
+    opcode_back <= "0000001";
+    wait;
+    end process;
 
 
 end Behavioral;
