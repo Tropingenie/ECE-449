@@ -101,12 +101,12 @@ begin
             when "0000111" =>                    --TEST Op
                 if (data1 = b"0000000000000000") then
                     z_flag <= '1';
-                elsif data1(15) = '1' and data(14) = '1' then
+                elsif data1(15) = '1' then
                     n_flag <= '1';
                 end if;
 
             when "0100000" =>                    --OUT Op
-            --??
+            data3 <= data1;
 
             when "0100001" =>                    --IN Op
             --???

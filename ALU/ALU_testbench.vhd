@@ -78,7 +78,7 @@ begin
     in1 <= b"0000000000000010";
     in2 <= b"0000000000000011";
     
-    --wait until (clk='1' and clk'event); --ADD 131,071 + 1 () [OVERFLOW ADD]
+    --wait until (clk='1' and clk'event); --ADD 131,071 + 1 (WORKS) [OVERFLOW ADD]
     --in1 <= b"1111111111111111";
     --in2 <= b"0000000000000001";
     --alu_mode <= "001";
