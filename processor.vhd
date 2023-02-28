@@ -13,11 +13,11 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
-entity processor is:
+entity processor is
 port(
     rst : in std_logic;
     ROM_FROM, RAM_FROM_A, RAM_FROM_B, IN_PORT : in std_logic_vector(15 downto 0);
-    RAM_TO, OUT_PORT, RAM_ADDR_A, RAM_ADDR_B : out std_logic_vector(15 downto 0);
+    RAM_TO, OUT_PORT, RAM_ADDR_A, RAM_ADDR_B : out std_logic_vector(15 downto 0)
 );
 end processor;
 
@@ -34,7 +34,7 @@ component InstructionFetcher is
 port(
     M_INSTR : in std_logic_vector(15 downto 0); -- Input from memory
     clk, double_clk : in std_logic; -- clock at twice the rate of the datapath, PC gets double clk to strobe properly
-    INSTR, M_ADDR : out std_logic_vector(15 downto 0); -- Instruction output and memory address issuing respectively
+    INSTR, M_ADDR : out std_logic_vector(15 downto 0) -- Instruction output and memory address issuing respectively
 );
 end component;
 
@@ -44,7 +44,7 @@ port(
     opcode_out      : out std_logic_vector(6 downto 0);
     rd_1, rd_2, ra  : out std_logic_vector(2 downto 0);
     imm             : out std_logic_vector(3 downto 0)
-    );
+);
 end component;
 
 component register_file is
@@ -61,24 +61,20 @@ end component;
 
 component RegisterArbitrator is
 port(
-    opcode_in   : in std_logic_vector(6 downto 0); -- opcode of the "current" instruction
-    opcode_back : in std_logic_vector(6 downto 0); -- opcode of the "writing back" instruction
-    AR          : in std_logic_vector(15 downto 0); -- Arithmetic result (data) from the "wiring back" instruction
-    ra          : in std_logic_vector(2 downto 0); -- writeback register of the "writing back" instruction
-    rd_2        : in std_logic_vector(2 downto 0); -- Second register from "current" instruction
-    clk         : in std_logic;                      -- Clock at 2x the datapath
-    wr_en       : out std_logic;                    -- Write enable for writeback
-    r_sel       : out std_logic_vector(2 downto 0) -- Selected register
+    opcode_in   : in std_logic_vector(6 downto 0);  -- opcode of the "current" instruction
+    opcode_back : in std_logic_vector(6 downto 0);  -- opcode of the "writing back" instruction
+    clk         : in std_logic;                     -- Clock at twice the rate of the datapath
+    wr_en       : out std_logic                    -- Write enable for writeback
 );
 end component;
 
 component ALU is
-port(
-    in1, in2 : in STD_LOGIC_VECTOR(15 downto 0); --Input 1, Input 2 16-bit inputs including op code and fortmat A(0-3)
-    alu_mode : in STD_LOGIC_VECTOR(2 downto 0);  --3 bit vector that determines the ALU operation [ADD (0), ADD(1), SUB (2), MUL(3), NAND(4), SHL (5), SHR(6), TEST(7)]
-    clk, rst : in STD_LOGIC;                     --clock and reset signals
-    result   : out STD_LOGIC_VECTOR(2 downto 0); --3 bit result vector
-    z_flag, n_flag: out STD_LOGIC                --zero and negative flag and done
+port ( 
+    in1, in2 : in STD_LOGIC_VECTOR(15 downto 0);  --Input 1, Input 2 16-bit inputs including op code and fortmat A(0-3)
+    op_code  : in STD_LOGIC_VECTOR(6 downto 0);   --Op code of current instuction, used to deduce operation in ALU
+    clk, rst : in STD_LOGIC;                      --clock and reset signals
+    result   : out STD_LOGIC_VECTOR(15 downto 0); --3 bit result vector
+    z_flag, n_flag, o_flag: out STD_LOGIC         --zero, negative and overflow flags
     );
 end component;
 
@@ -103,13 +99,18 @@ signal ID_imm                           : std_logic_vector(3 downto 0); -- Immed
 signal R_wr_en                          : std_logic; -- Register file write enable
 signal EX_AR, MEM_AR, WB_AR             : std_logic_vector(15 downto 0); -- AR in various stages
 signal ID_data1, ID_data2, EX_data1, EX_data2 : std_logic_vector(15 downto 0); -- Data from register file for various stages
+signal ID_RSEL                          : std_logic_vector(15 downto 0); -- Selected address of register arbitrator
 signal ID_ALU_IN_2                      : std_logic_vector(15 downto 0); -- Intermediate signal for selecting if data is from regisers or an immediate
+signal IDEX_opcode_in, IDEX_opcode_out, EXMEM_opcode_in, EXMEM_opcode_out, MEMWB_opcode_in, MEMWB_opcode_out  : std_logic_vector(15 downto 0); -- Intermediate signals to concatenate bits for input into a fixed-width register
+signal EX_Flags, MEM_Flags, WB_Flags    : std_logic_vector(2 downto 0); -- ALU flags
+signal MEM_TO_WB, MEM_DATA              : std_logic_vector(15 downto 0); -- Intermediate signals for MEM stage to select what to pass to WB
+signal MEM_OPCODE_VAL                   : unsigned := unsigned(MEM_OPCODE); -- For comparison using <, >, etc
 
 begin
 
 process begin   --Clocking process, clk has 20us duty cycle
-    counter <= counter + 1
-    case counter is:
+    counter <= counter + 1;
+    case counter is
         when 1 =>
             clk <= not clk;
         when 2 =>
@@ -128,19 +129,46 @@ process begin   --Clocking process, clk has 20us duty cycle
     wait for 10 us;
 end process;
 
-IFET    :     InstructionFetcher port map(M_INST=>RAM_FROM_B, clk=>half_clk, double_clk=>clk, INSTR=>fetched_instr, M_ADDR=>RAM_ADDR_B);
+I_FETCH :     InstructionFetcher port map(M_INSTR=>RAM_FROM_B, clk=>half_clk, double_clk=>clk, INSTR=>fetched_instr, M_ADDR=>RAM_ADDR_B);
 R_IFID  :     theregister        port map(clk=>quarter_clk, d_in=>fetched_instr, d_out=>decoding_instr); -- IF/ID stage register
-ID      :     InstructionDecoder port map(instruction=>decoding_instr, opcode_out=>ID_opcode, rd_1=>ID_rb, rd_2=>ID_rc, ra=>ID_ra, imm=>ID_imm);
-R_ARB   :     RegisterArbitrator port map(opcode_in=>ID_opcode, opcode_back=>WB_opcode, ra=>WB_ra, rd_2=>ID_rc, clk=>half_clk, wr_en=>R_wr_en, r_sel=ID_r_sel); -- Register Arbitrator
-R_FILE  :     register_file      port map(clk=>half_clk, rst=>rst, rd_index1=>ID_rb, rd_index2=>ID_rsel, rd_data1=>ID_data1, rd_data2=>ID_data2, wr_index=>ID_r_sel, wr_data=>WB_AR, wr_enable=>R_wr_en);
+I_DECODE:     InstructionDecoder port map(instruction=>decoding_instr, opcode_out=>ID_opcode, rd_1=>ID_rb, rd_2=>ID_rc, ra=>ID_ra, imm=>ID_imm);
+R_ARB   :     RegisterArbitrator port map(opcode_in=>ID_opcode, opcode_back=>WB_opcode, clk=>clk, wr_en=>R_wr_en); -- Register Arbitrator
+R_FILE  :     register_file      port map(clk=>clk, rst=>rst, rd_index1=>ID_rb, rd_index2=>ID_rsel, rd_data1=>ID_data1, rd_data2=>ID_ALU_IN_2, wr_index=>ID_r_sel, wr_data=>WB_AR, wr_enable=>R_wr_en);
 
-ID_ALU_IN_2 <=  ID_imm when ID_opcode = x"6" or ID_opcode = x"7" else -- Format A2
-                ID_data2;
+-- MUX controlled by register arbitrator
+process(R_wr_en) begin
+    case(R_wr_en) is
+    when '0' => ID_rsel <= ID_rc;   
+    when '1' => ID_rsel <= WB_ra;
+    when others => null;
+    end case;
+end process;
 
+-- Register/Immediate select for input to the ALU
+ ID_DATA2 <=  ID_imm when ID_opcode = x"6" or ID_opcode = x"7" else -- Format A2
+              ID_ALU_IN_2; -- All other instructions
+                
+R_IDEX_1:     theregister port map(clk=>quarter_clk, d_in=>ID_data1, d_out=>EX_DATA1); -- ALU in1
+R_IDEX_2:     theregister port map(clk=>quarter_clk, d_in=>ID_data2, d_out=>EX_DATA2); -- ALU in2
+IDEX_opcode_in <= ID_opcode & ID_ra & "------";
+R_IDEX_3:     theregister port map(clk=>quarter_clk, d_in=>IDEX_opcode_in, d_out=>IDEX_opcode_out); -- opcode(15 downto 9), ra (8 downto 6)
+EX_opcode <= IDEX_opcode_out(15 downto 9);
+EX_ra <= IDEX_opcode_out(8 downto 6);
+theALU: ALU port map(in1=>EX_DATA1, in2=>EX_DATA2, op_code=>EX_opcode, clk=>quarter_clk, rst=>rst, result=> EX_AR, Z_flag=>EX_flags(2), N_flag=>EX_flags(1), O_Flag=>EX_flags(0));
+EXMEM_OPCODE_IN <= EX_OPCODE & EX_FLAGS & EX_RA & "---";
 
+R_EXMEM_1: theregister port map(clk=>quarter_clk, d_in=>EX_AR, d_out=>MEM_AR); -- ALU output (AR)
+R_EXMEM_2: theregister port map(clk=>quarter_clk, d_in=>EXMEM_OPCODE_IN, d_out=>EXMEM_OPCODE_OUT); -- Opcode(15 downto 9), Flags (8 downto 6), ra (5 downto 3)
 
+MEM_OPCODE <= EXMEM_OPCODE_OUT(15 downto 9);
+MEM_FLAGS <= EXMEM_OPCODE_OUT(8 downto 6);
+MEM_RA <= EXMEM_OPCODE_OUT(5 downto 3);
 
-R_IDEX  :
-
+-- NOTE: Memory access not implemented yet (waiting until IN, OUT, and L format instructions are implemented)
+--MEM:    MemoryAccessUnit port map(opcode=>MEM_OPCODE, clk=>clk, rst=>rst, AR=>MEM_AR,M_ADDR=>);
+-- Select AR from ALU or data from memory to pass to WB stage
+MEM_TO_WB <= MEM_AR when MEM_opcode_val < 7 else
+           MEM_DATA when (MEM_opcode_val >= 16 and MEM_opcode_val <= 19) or MEM_opcode_val = 32 or MEM_opcode_val = 33 else
+           (others=>'-');--don't care
 
 end Behaviour;
