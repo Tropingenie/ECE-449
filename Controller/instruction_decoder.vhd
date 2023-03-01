@@ -35,8 +35,8 @@ begin
     
     process(opcode)
     begin
-    	assert false report "Instruction: " & to_hstring(instruction) severity note;
-    	assert false report "Opcode: " & to_hstring(opcode) severity note;
+    	--assert false report "Instruction: " & to_hstring(instruction) severity note;
+    	--assert false report "Opcode: " & to_hstring(opcode) severity note;
         case opcode is
             when "0000000" => --Format A0 (NOP)  
             	assert false report "debug" severity note;

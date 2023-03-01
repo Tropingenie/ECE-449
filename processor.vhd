@@ -89,7 +89,7 @@ port(
 );
 end component;
 
-signal half_clk, quarter_clk,           : std_logic := '0'; -- various clock domains for ALU, Memory, and everything else respectively (avoids PLLs)
+signal half_clk, quarter_clk            : std_logic := '0'; -- various clock domains for ALU, Memory, and everything else respectively (avoids PLLs)
 signal counter                          : integer := 1; -- Counter for clock division
 signal IF_INSTR, ID_INSTR               : std_logic_vector(15 downto 0); -- Instruction from various stages
 signal ID_opcode, EX_opcode, 
@@ -101,7 +101,7 @@ signal ID_WRITE_EN                      : std_logic; -- Register file write enab
 signal EX_AR, MEM_AR                    : std_logic_vector(15 downto 0); -- AR in various stages
 signal ID_data1, ID_data2, EX_data1, 
     EX_data2                            : std_logic_vector(15 downto 0); -- Data from register file for various stages
-signal ID_RSEL                          : std_logic_vector(15 downto 0); -- Selected address of register arbitrator
+signal ID_RSEL                          : std_logic_vector(2 downto 0); -- Selected address of register arbitrator
 signal ID_RC_DATA                       : std_logic_vector(15 downto 0); -- Intermediate signal for holding contents of RC while selecting if data is from registers or an immediate
 signal IDEX_CONTROL_BITS_IN, 
     IDEX_CONTROL_BITS_OUT, 
