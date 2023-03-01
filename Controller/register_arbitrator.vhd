@@ -37,26 +37,28 @@ begin
 
     process(clk)
     begin
-     counter <= counter + 1;
-
-     if (counter mod 3) = 0 then
-         counter <= 0;    
-           
-         case opcode_back is
-         
-            when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110"  =>       --ADD/SUB/MULT/NAND/SHIFTR/SHIFTL Ops
-                write <= NOT write;
-                
-            when others =>
-                write <= '0';
-                assert false report "Opcode is not a writeback" severity note;
-                                       
-        end case;  
-                  
-     end if;
-
-
-     wr_en <= write;   
-
+        if(RISING_EDGE(clk)) then
+         counter <= counter + 1;
+    
+         if (counter mod 3) = 0 then
+             counter <= 0;    
+               
+             case opcode_back is
+             
+                when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110"  =>       --ADD/SUB/MULT/NAND/SHIFTR/SHIFTL Ops
+                    write <= NOT write;
+                    
+                when others =>
+                    write <= '0';
+                    assert false report "Opcode is not a writeback" severity note;
+                                           
+            end case;  
+                      
+         end if;
+    
+    
+         wr_en <= write;
+            
+      end if;
     end process;
 end Behavioral;

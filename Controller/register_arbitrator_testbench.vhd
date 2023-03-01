@@ -1,16 +1,13 @@
 ----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
+-- Engineer: Kai Herrero, Benjamin Lyne
 -- 
 -- Create Date: 02/27/2023 03:48:02 PM
--- Design Name: 
+-- Design Name: Register arbitrator testbench
 -- Module Name: register_arbitrator_testbench - Behavioral
--- Project Name: 
--- Target Devices: 
--- Tool Versions: 
--- Description: 
+-- Project Name: ECE 458 16 bit processor 
+-- Target Devices: register_arbitrator
+-- Description: Tests the functionallity of the wr_en of the register arbitrator
 -- 
--- Dependencies: 
 -- 
 -- Revision:
 -- Revision 0.01 - File Created
