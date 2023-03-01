@@ -16,7 +16,7 @@ use IEEE.NUMERIC_STD.ALL;
 entity processor is
 port(
     clk, rst : in std_logic;
-    ROM_FROM, RAM_FROM_A, RAM_FROM_B, IN_PORT : in std_logic_vector(15 downto 0);
+    ROM_FROM, RAM_FROM_A, RAM_FROM_B, IN_PORT, DEBUG_INSTR_IN : in std_logic_vector(15 downto 0);
     RAM_TO, OUT_PORT, RAM_ADDR_A, RAM_ADDR_B : out std_logic_vector(15 downto 0)
 );
 end processor;
@@ -91,19 +91,26 @@ end component;
 
 signal half_clk, quarter_clk            : std_logic := '0'; -- various clock domains for ALU, Memory, and everything else respectively (avoids PLLs)
 signal counter                          : integer := 1; -- Counter for clock division
-signal fetched_instr                    : std_logic_vector(15 downto 0); -- Instruction from IF stage
-signal decoding_instr                   : std_logic_vector(15 downto 0); -- Instruction at start of ID stage
-signal ID_opcode, EX_opcode, MEM_opcode, WB_opcode : std_logic_vector(6 downto 0); -- opcode during various stages
-signal ID_ra, ID_rb, ID_rc, ID_r_sel, EX_ra, MEM_ra, WB_ra   : std_logic_vector(2 downto 0); -- Register addresses in various stages
+signal IF_INSTR, ID_INSTR               : std_logic_vector(15 downto 0); -- Instruction from various stages
+signal ID_opcode, EX_opcode, 
+    MEM_opcode, WB_opcode               : std_logic_vector(6 downto 0); -- opcode during various stages
+signal ID_ra, ID_rb, ID_rc, ID_r_sel, 
+    EX_ra, MEM_ra, WB_ra                : std_logic_vector(2 downto 0); -- Register addresses in various stages
 signal ID_imm                           : std_logic_vector(3 downto 0); -- Immediate value decoded in the ID stage
 signal ID_WRITE_EN                      : std_logic; -- Register file write enable (for writeback)
 signal EX_AR, MEM_AR                    : std_logic_vector(15 downto 0); -- AR in various stages
-signal ID_data1, ID_data2, EX_data1, EX_data2 : std_logic_vector(15 downto 0); -- Data from register file for various stages
+signal ID_data1, ID_data2, EX_data1, 
+    EX_data2                            : std_logic_vector(15 downto 0); -- Data from register file for various stages
 signal ID_RSEL                          : std_logic_vector(15 downto 0); -- Selected address of register arbitrator
 signal ID_ALU_IN_2                      : std_logic_vector(15 downto 0); -- Intermediate signal for selecting if data is from regisers or an immediate
-signal IDEX_opcode_in, IDEX_opcode_out, EXMEM_opcode_in, EXMEM_opcode_out, MEMWB_opcode_in, MEMWB_opcode_out  : std_logic_vector(15 downto 0); -- Intermediate signals to concatenate bits for input into a fixed-width register
+signal IDEX_CONTROL_BITS_IN, 
+    IDEX_CONTROL_BITS_OUT, 
+    EXMEM_CONTROL_BITS_IN, 
+    EXMEM_CONTROL_BITS_OUT, 
+    MEMWB_CONTROL_BITS_IN, 
+    MEMWB_CONTROL_BITS_OUT              : std_logic_vector(15 downto 0); -- Intermediate signals to concatenate bits for input into a fixed-width register
 signal EX_Flags, MEM_Flags, WB_Flags    : std_logic_vector(2 downto 0); -- ALU flags
-signal MEM_WB_DATA, MEM_DATA           : std_logic_vector(15 downto 0); -- Intermediate signals for MEM stage to select what to pass to WB
+signal MEM_WB_DATA, MEM_DATA            : std_logic_vector(15 downto 0); -- Intermediate signals for MEM stage to select what to pass to WB
 signal MEM_OPCODE_VAL                   : unsigned := unsigned(MEM_OPCODE); -- For comparison using <, >, etc
 signal WB_DATA                          : std_logic_vector(15 downto 0); -- Data to write back in WB stage
 
@@ -131,13 +138,14 @@ end process;
 --==============================================================================
 -- Instruction Fetch
 
-I_FETCH :     InstructionFetcher port map(M_INSTR=>RAM_FROM_B, clk=>half_clk, double_clk=>clk, INSTR=>fetched_instr, M_ADDR=>RAM_ADDR_B);
-R_IFID  :     theregister        port map(clk=>quarter_clk, d_in=>fetched_instr, d_out=>decoding_instr); -- IF/ID stage register
+--I_FETCH :     InstructionFetcher port map(M_INSTR=>RAM_FROM_B, clk=>half_clk, double_clk=>clk, INSTR=>IF_INSTR, M_ADDR=>RAM_ADDR_B);
+IF_INSTR <= DEBUG_INSTR_IN;
+R_IFID  :     theregister        port map(clk=>quarter_clk, d_in=>IF_INSTR, d_out=>ID_INSTR); -- IF/ID stage register
 
 --==============================================================================
 -- Instruction Decode
 
-I_DECODE:     InstructionDecoder port map(instruction=>decoding_instr, opcode_out=>ID_opcode, rd_1=>ID_rb, rd_2=>ID_rc, ra=>ID_ra, imm=>ID_imm);
+I_DECODE:     InstructionDecoder port map(instruction=>ID_INSTR, opcode_out=>ID_opcode, rd_1=>ID_rb, rd_2=>ID_rc, ra=>ID_ra, imm=>ID_imm);
 R_ARB   :     RegisterArbitrator port map(opcode_in=>ID_opcode, opcode_back=>WB_opcode, clk=>clk, wr_en=>ID_WRITE_EN); -- Register Arbitrator
 R_FILE  :     register_file      port map(clk=>clk, rst=>rst, rd_index1=>ID_rb, rd_index2=>ID_rsel, rd_data1=>ID_data1, rd_data2=>ID_ALU_IN_2, wr_index=>ID_r_sel, wr_data=>WB_DATA, wr_enable=>ID_WRITE_EN);
 
@@ -156,24 +164,24 @@ end process;
                 
 R_IDEX_1:     theregister port map(clk=>quarter_clk, d_in=>ID_data1, d_out=>EX_DATA1); -- ALU in1
 R_IDEX_2:     theregister port map(clk=>quarter_clk, d_in=>ID_data2, d_out=>EX_DATA2); -- ALU in2
-IDEX_opcode_in <= ID_opcode & ID_ra & "------";
-R_IDEX_3:     theregister port map(clk=>quarter_clk, d_in=>IDEX_opcode_in, d_out=>IDEX_opcode_out); -- opcode(15 downto 9), ra (8 downto 6)
+IDEX_CONTROL_BITS_IN <= ID_opcode & ID_ra & "------";
+R_IDEX_3:     theregister port map(clk=>quarter_clk, d_in=>IDEX_CONTROL_BITS_IN, d_out=>IDEX_CONTROL_BITS_OUT); -- opcode(15 downto 9), ra (8 downto 6)
 
 --==============================================================================
 -- Execute
-EX_opcode <= IDEX_opcode_out(15 downto 9);
-EX_ra <= IDEX_opcode_out(8 downto 6);
+EX_opcode <= IDEX_CONTROL_BITS_OUT(15 downto 9);
+EX_ra <= IDEX_CONTROL_BITS_OUT(8 downto 6);
 theALU: ALU port map(in1=>EX_DATA1, in2=>EX_DATA2, op_code=>EX_opcode, clk=>quarter_clk, rst=>rst, result=> EX_AR, Z_flag=>EX_flags(2), N_flag=>EX_flags(1), O_Flag=>EX_flags(0));
-EXMEM_OPCODE_IN <= EX_OPCODE & EX_FLAGS & EX_RA & "---";
+EXMEM_CONTROL_BITS_IN <= EX_OPCODE & EX_FLAGS & EX_RA & "---";
 
 R_EXMEM_1: theregister port map(clk=>quarter_clk, d_in=>EX_AR, d_out=>MEM_AR); -- ALU output (AR)
-R_EXMEM_2: theregister port map(clk=>quarter_clk, d_in=>EXMEM_OPCODE_IN, d_out=>EXMEM_OPCODE_OUT); -- Opcode(15 downto 9), Flags (8 downto 6), ra (5 downto 3)
+R_EXMEM_2: theregister port map(clk=>quarter_clk, d_in=>EXMEM_CONTROL_BITS_IN, d_out=>EXMEM_CONTROL_BITS_OUT); -- Opcode(15 downto 9), Flags (8 downto 6), ra (5 downto 3)
 
 --==============================================================================
 -- Memory
-MEM_OPCODE <= EXMEM_OPCODE_OUT(15 downto 9);
-MEM_FLAGS <= EXMEM_OPCODE_OUT(8 downto 6);
-MEM_RA <= EXMEM_OPCODE_OUT(5 downto 3);
+MEM_OPCODE <= EXMEM_CONTROL_BITS_OUT(15 downto 9);
+MEM_FLAGS <= EXMEM_CONTROL_BITS_OUT(8 downto 6);
+MEM_RA <= EXMEM_CONTROL_BITS_OUT(5 downto 3);
 
 -- NOTE: Memory access not implemented yet (waiting until IN, OUT, and L format instructions are implemented)
 --MEM:    MemoryAccessUnit port map(opcode=>MEM_OPCODE, clk=>clk, rst=>rst, AR=>MEM_AR,M_ADDR=>);
@@ -182,15 +190,15 @@ MEM_WB_DATA <= MEM_AR when MEM_opcode_val < 7 else
            MEM_DATA when (MEM_opcode_val >= 16 and MEM_opcode_val <= 19) or MEM_opcode_val = 32 or MEM_opcode_val = 33 else
            (others=>'-');--don't care
            
-MEMWB_OPCODE_IN <= MEM_OPCODE & MEM_FLAGS & MEM_RA & "---";
+MEMWB_CONTROL_BITS_IN <= MEM_OPCODE & MEM_FLAGS & MEM_RA & "---";
            
 R_MEMWB_1: theregister port map(clk=>quarter_clk, d_in=>MEM_WB_DATA, d_out=>WB_DATA);
-R_MEMWB_2: theregister port map(clk=>quarter_clk, d_in=>MEMWB_OPCODE_IN, d_out=>MEMWB_OPCODE_OUT);
+R_MEMWB_2: theregister port map(clk=>quarter_clk, d_in=>MEMWB_CONTROL_BITS_IN, d_out=>MEMWB_CONTROL_BITS_OUT);
  
  --==============================================================================
  -- Writeback
- WB_OPCODE <= MEMWB_OPCODE_OUT(15 downto 9);
- WB_FLAGS <= MEMWB_OPCODE_OUT(8 downto 6);
- WB_RA <= MEMWB_OPCODE_OUT(5 downto 3);
+ WB_OPCODE <= MEMWB_CONTROL_BITS_OUT(15 downto 9);
+ WB_FLAGS <= MEMWB_CONTROL_BITS_OUT(8 downto 6);
+ WB_RA <= MEMWB_CONTROL_BITS_OUT(5 downto 3);
 
 end Behaviour;
