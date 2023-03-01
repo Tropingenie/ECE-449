@@ -17,7 +17,9 @@ entity InstructionDecoder is
 port(
     instruction     : in std_logic_vector(15 downto 0);
     opcode_out      : out std_logic_vector(6 downto 0);
-    rd_1, rd_2, ra  : out std_logic_vector(2 downto 0);
+    rd_1,               -- Address of register of first operand
+    rd_2,               -- Address of register of second operand
+    ra              : out std_logic_vector(2 downto 0);
     imm             : out std_logic_vector(3 downto 0)
     );
 end InstructionDecoder;
