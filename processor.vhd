@@ -111,7 +111,7 @@ signal IDEX_CONTROL_BITS_IN,
     MEMWB_CONTROL_BITS_OUT              : std_logic_vector(15 downto 0); -- Intermediate signals to concatenate control bits for input into a fixed-width register
 signal EX_Flags, MEM_Flags, WB_Flags    : std_logic_vector(2 downto 0); -- ALU flags
 signal MEM_WB_DATA, MEM_DATA            : std_logic_vector(15 downto 0); -- Intermediate signals for MEM stage to select what to pass to WB
-signal MEM_OPCODE_VAL                   : unsigned := unsigned(MEM_OPCODE); -- For comparison using <, >, etc
+signal MEM_OPCODE_VAL                   : unsigned(15 downto 0); -- For comparison using <, >, etc
 signal WB_DATA                          : std_logic_vector(15 downto 0); -- Data to write back in WB stage
 
 begin
@@ -164,7 +164,7 @@ process(ID_WRITE_EN) begin
 end process;
 
 -- Register/Immediate select for input to the ALU
- ID_DATA2 <=  x"000" & ID_imm when ID_opcode = x"6" or ID_opcode = x"7" else -- Format A2 needs the immediate as the second operand
+ ID_DATA2 <=  x"000" & ID_imm when ID_opcode = "0000110" or ID_opcode = "0000111" else -- Format A2 needs the immediate as the second operand
               ID_RC_DATA; -- All other instructions just use the second operand verbatim (may be 0 if there is no second operand)
 
 -- Concatenate control bits for input to register
@@ -197,7 +197,7 @@ R_EXMEM_2: theregister port map(clk=>quarter_clk, d_in=>EXMEM_CONTROL_BITS_IN,
 MEM_OPCODE <= EXMEM_CONTROL_BITS_OUT(15 downto 9);
 MEM_FLAGS <= EXMEM_CONTROL_BITS_OUT(8 downto 6);
 MEM_RA <= EXMEM_CONTROL_BITS_OUT(5 downto 3);
-
+MEM_OPCODE_VAL <= unsigned("000000000" & MEM_OPCODE);
 -- NOTE: Memory access not implemented yet (waiting until IN, OUT, and L format instructions are implemented)
 -- Uncomment the following line once memory and memory control is to be implemented
 --MEM:    MemoryAccessUnit port map(opcode=>MEM_OPCODE, clk=>clk, rst=>rst, AR=>MEM_AR,M_ADDR=>);

@@ -90,7 +90,7 @@ begin
             when "0000100" =>                    --NAND op
                 data3 <= data1 NAND data2;       
                 
-            when "00000101" =>                   --SHFT R op
+            when "0000101" =>                   --SHFT R op
                 shift_amt <= to_integer(unsigned(in2(3 downto 0)));
                 data3 <= SHIFT_LEFT(data1, shift_amt);      --currently sign extends for 2's complement
                 
