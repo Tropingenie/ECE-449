@@ -110,7 +110,10 @@ begin
 
             when "0100001" =>                    --IN Op
             --???
-                    
+                
+            when "UUUUUUU" | "XXXXXXX" =>
+                assert false report "Uninitialized data in ALU" severity note;    
+                        
             when others =>
                 assert false report "ALU operation out of range" severity failure;
                 
