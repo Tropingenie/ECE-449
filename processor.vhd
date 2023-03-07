@@ -25,7 +25,7 @@ architecture Behaviour of processor is
 
 component theregister is
 port(
-    clk : in std_logic;
+    clk, rst : in std_logic;
     d_in : in std_logic_vector(15 downto 0);
     d_out : out std_logic_vector(15 downto 0));
 end component;
@@ -140,7 +140,7 @@ end process;
 
 --I_FETCH :     InstructionFetcher port map(M_INSTR=>RAM_FROM_B, clk=>half_clk, double_clk=>clk, INSTR=>IF_INSTR, M_ADDR=>RAM_ADDR_B);
 IF_INSTR <= DEBUG_INSTR_IN;
-R_IFID  :     theregister        port map(clk=>quarter_clk, d_in=>IF_INSTR, d_out=>ID_INSTR); -- IF/ID stage register
+R_IFID  :     theregister        port map(clk=>quarter_clk, rst=>rst, d_in=>IF_INSTR, d_out=>ID_INSTR); -- IF/ID stage register
 
 --==============================================================================
 -- Instruction Decode
@@ -151,36 +151,38 @@ REG_ARB :     RegisterArbitrator port map(opcode_in=>ID_opcode, opcode_back=>WB_
                                           clk=>clk, wr_en=>ID_WRITE_EN); -- Register Arbitrator
 REG_FILE:     register_file      port map(clk=>clk, rst=>rst, rd_index1=>ID_rb, 
                                           rd_index2=>ID_rsel, rd_data1=>ID_data1, 
-                                          rd_data2=>ID_RC_DATA, wr_index=>ID_rsel, 
+                                          rd_data2=>ID_RC_DATA, wr_index=>WB_ra, 
                                           wr_data=>WB_DATA, wr_enable=>ID_WRITE_EN);
 
+ID_rsel <= ID_rc;  
+
 -- MUX controlled by register arbitrator
-process(ID_WRITE_EN) begin
-    case(ID_WRITE_EN) is
-        when '0' => ID_rsel <= ID_rc;   
-        when '1' => ID_rsel <= WB_ra;
-        when others => null;
-    end case;
-end process;
+--process(ID_WRITE_EN) begin
+--    case(ID_WRITE_EN) is
+--        when '0' => ID_rsel <= ID_rc;   
+--        when '1' => ID_rsel <= WB_ra;
+--        when others => null;
+--    end case;
+--end process;
 
 -- Register/Immediate select for input to the ALU
- ID_DATA2 <=  x"000" & ID_imm when ID_opcode = "0000110" or ID_opcode = "0000111" else -- Format A2 needs the immediate as the second operand
+ ID_DATA2 <=  x"000" & ID_imm when ID_opcode = "0000110" or ID_opcode = "0000101" else -- Format A2 needs the immediate as the second operand
               ID_RC_DATA; -- All other instructions just use the second operand verbatim (may be 0 if there is no second operand)
 
 -- Concatenate control bits for input to register
 IDEX_CONTROL_BITS_IN <= ID_opcode & ID_ra & "------"; -- Contains: opcode(15 downto 9), ra (8 downto 6)
 
 -- Inter-stage registers                
-R_IDEX_1:     theregister port map(clk=>quarter_clk, d_in=>ID_data1, d_out=>EX_DATA1); -- ALU in1
-R_IDEX_2:     theregister port map(clk=>quarter_clk, d_in=>ID_data2, d_out=>EX_DATA2); -- ALU in2
-R_IDEX_3:     theregister port map(clk=>quarter_clk, d_in=>IDEX_CONTROL_BITS_IN, 
+R_IDEX_1:     theregister port map(clk=>quarter_clk, rst=>rst, d_in=>ID_data1, d_out=>EX_DATA1); -- ALU in1
+R_IDEX_2:     theregister port map(clk=>quarter_clk, rst=>rst, d_in=>ID_data2, d_out=>EX_DATA2); -- ALU in2
+R_IDEX_3:     theregister port map(clk=>quarter_clk, rst=>rst, d_in=>IDEX_CONTROL_BITS_IN, 
                                    d_out=>IDEX_CONTROL_BITS_OUT);
 
 --==============================================================================
 -- Execute
 EX_opcode <= IDEX_CONTROL_BITS_OUT(15 downto 9);
 EX_ra <= IDEX_CONTROL_BITS_OUT(8 downto 6);
-theALU: ALU port map(in1=>EX_DATA1, in2=>EX_DATA2, op_code=>EX_opcode, clk=>quarter_clk, 
+theALU: ALU port map(in1=>EX_DATA1, in2=>EX_DATA2, op_code=>EX_opcode, clk=>clk, 
                      rst=>rst, result=> EX_AR, Z_flag=>EX_flags(2), N_flag=>EX_flags(1), 
                      O_Flag=>EX_flags(0));
 
@@ -188,8 +190,8 @@ theALU: ALU port map(in1=>EX_DATA1, in2=>EX_DATA2, op_code=>EX_opcode, clk=>quar
 EXMEM_CONTROL_BITS_IN <= EX_OPCODE & EX_FLAGS & EX_RA & "---"; -- Contains: Opcode(15 downto 9), Flags (8 downto 6), ra (5 downto 3)
 
 -- Inter-stage registers 
-R_EXMEM_1: theregister port map(clk=>quarter_clk, d_in=>EX_AR, d_out=>MEM_AR); -- ALU output (AR)
-R_EXMEM_2: theregister port map(clk=>quarter_clk, d_in=>EXMEM_CONTROL_BITS_IN, 
+R_EXMEM_1: theregister port map(clk=>quarter_clk, rst=>rst, d_in=>EX_AR, d_out=>MEM_AR); -- ALU output (AR)
+R_EXMEM_2: theregister port map(clk=>quarter_clk, rst=>rst, d_in=>EXMEM_CONTROL_BITS_IN, 
                                 d_out=>EXMEM_CONTROL_BITS_OUT);
 
 --==============================================================================
@@ -211,8 +213,8 @@ MEM_WB_DATA <= MEM_AR when MEM_opcode_val < 7 else
 MEMWB_CONTROL_BITS_IN <= MEM_OPCODE & MEM_FLAGS & MEM_RA & "---"; -- Contains: Opcode(15 downto 9), Flags (8 downto 6), ra (5 downto 3)
 
 -- Inter-stage registers        
-R_MEMWB_1: theregister port map(clk=>quarter_clk, d_in=>MEM_WB_DATA, d_out=>WB_DATA);
-R_MEMWB_2: theregister port map(clk=>quarter_clk, d_in=>MEMWB_CONTROL_BITS_IN, 
+R_MEMWB_1: theregister port map(clk=>quarter_clk, rst=>rst, d_in=>MEM_WB_DATA, d_out=>WB_DATA);
+R_MEMWB_2: theregister port map(clk=>quarter_clk, rst=>rst, d_in=>MEMWB_CONTROL_BITS_IN, 
                                 d_out=>MEMWB_CONTROL_BITS_OUT);
  
  --==============================================================================

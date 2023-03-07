@@ -51,6 +51,7 @@ begin
     
     process begin   --behavioural process
     rst <= '0';
+    DEBUG_INSTR_IN <= "0000000000000000";
     wait until (clk='1' and clk'event);
     rst <= '1';
     wait until (clk='1' and clk'event);
