@@ -43,12 +43,16 @@ process(clk, rst) begin
             alu_stall_enable <= '0';
              case ex_opcode is 
          
-             when "0000000" | "0000100" | "0000101" | "0000110" | "0000111" | "0100000" | "0100001"=>                    --NOP, NAND, SHR, SHL, TEST, OUT, IN
+             when "0000000" | "0000100" | "0000111" | "0100000" | "0100001"=>                    --NOP, NAND, TEST, OUT, IN
              -- 1 clock (no delay)
              null;       
              when "0000001" | "0000010" =>                    --ADD, SUB op
             -- 2 clocks (1 clock delay)
                 counter <= 1;
+                alu_stall_enable <= '1';        
+             when "0000101" | "0000110" =>  -- SHR, SHL
+             -- 3 clocks (2 clock delay)
+                counter <= 2;
                 alu_stall_enable <= '1';
              when "0000011" =>                    --MULT op
              -- 4 clocks (3 clock delay)

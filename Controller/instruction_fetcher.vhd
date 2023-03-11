@@ -19,7 +19,7 @@ use IEEE.NUMERIC_STD.ALL;
 entity InstructionFetcher is
 port(
     M_INSTR : in std_logic_vector(15 downto 0); -- Input from memory
-    clk, double_clk, rst : in std_logic; -- clock at twice the rate of the datapath, PC gets double clk to strobe properly
+    clk, rst : in std_logic;
     INSTR, M_ADDR : out std_logic_vector(15 downto 0) -- Instruction output and memory address issuing respectively
 );
 end InstructionFetcher;
@@ -28,7 +28,7 @@ architecture Behaviour of InstructionFetcher is
 
 component theregister is
 port(
-    clk : in std_logic;
+    clk, rst : in std_logic;
     d_in : in std_logic_vector(15 downto 0);
     d_out : out std_logic_vector(15 downto 0));
 end component;
@@ -37,15 +37,14 @@ signal current_pc, next_pc : std_logic_vector(15 downto 0);
 
 begin
 
-    PC : theregister port map (clk=>double_clk, d_in => next_pc, d_out => current_pc);
+    PC : theregister port map (clk=>clk, rst=>rst, d_in => next_pc, d_out => current_pc);
 
     INSTR <= M_INSTR; -- Just pass through. This module is only a controller
 
     process(clk, rst)
     begin
         if rst = '1' or next_pc = "UUUU" then
-            current_pc <= (others=>'0');
-            next_pc <= (others=>'0');
+            M_ADDR <= (others=>'0');
         elsif RISING_EDGE(clk) then
             next_pc <= std_logic_vector(unsigned(current_pc) + x"0002");
             M_ADDR <= current_pc;

@@ -93,7 +93,7 @@ end component;
 component InstructionFetcher is
 port(
     M_INSTR : in std_logic_vector(15 downto 0); -- Input from memory
-    clk, double_clk : in std_logic; -- clock at twice the rate of the datapath, PC gets double clk to strobe properly
+    clk, rst : in std_logic; -- clock at twice the rate of the datapath, PC gets double clk to strobe properly
     INSTR, M_ADDR : out std_logic_vector(15 downto 0) -- Instruction output and memory address issuing respectively
 );
 end component;
@@ -186,8 +186,8 @@ MEMWB_clk <= clk when stall_en(3) = '0' else '0';
 --==============================================================================
 -- Instruction Fetch
 
---I_FETCH :     InstructionFetcher port map(M_INSTR=>RAM_FROM_B, clk=>half_clk, double_clk=>clk, INSTR=>IF_INSTR, M_ADDR=>RAM_ADDR_B);
-IF_INSTR <= DEBUG_INSTR_IN;
+I_FETCH :     InstructionFetcher port map(M_INSTR=>RAM_FROM_A, clk=>IFID_clk, rst=>rst, INSTR=>IF_INSTR, M_ADDR=>RAM_ADDR_A);
+--IF_INSTR <= DEBUG_INSTR_IN;
 R_IFID  :     theregister        port map(clk=>IFID_clk, rst=>rst, d_in=>IF_INSTR, d_out=>ID_INSTR); -- IF/ID stage register
 
 --==============================================================================
