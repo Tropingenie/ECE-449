@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------------
 -- Create Date: 03/11/2023 10:28:05 AM
 -- Design Name: Stall Controller
--- Module Name: stall_controller - Behavioral
+-- Module Name: StallController - Behavioral
 ----------------------------------------------------------------------------------
 
 
@@ -18,14 +18,14 @@ use IEEE.STD_LOGIC_MISC.ALL;
 --library UNISIM;
 --use UNISIM.VComponents.all;
 
-entity stall_controller is
+entity StallController is
   Port (
     stall_stage : in std_logic_vector(3 downto 0);
     stall_enable : out std_logic_vector(3 downto 0)
    );
-end stall_controller;
+end StallController;
 
-architecture Behavioral of stall_controller is
+architecture Behavioral of StallController is
 
 signal stall_IFID, stall_IDEX, stall_EXMEM, stall_MEMWB : std_logic;
 

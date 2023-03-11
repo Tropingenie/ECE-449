@@ -27,7 +27,8 @@ component controller is
 port(
     clk, rst : in std_logic;
     ID_opcode, EX_opcode, MEM_opcode, WB_opcode : in std_logic_vector(6 downto 0) := (others => '0');
-    ID_WRITE_EN : out std_logic := '0' -- Enable writing to the register
+    ID_WRITE_EN : inout std_logic := '0'; -- Enable writing to the register. INOUT used so we can feedback into the controller internally
+    stall_en : out std_logic_vector(3 downto 0) -- Stalls according to the set bit position 0=IFID, 1=IDEX, 2=EXMEM, 3=MEMWB
 );
 end component;
 
@@ -88,8 +89,8 @@ port(
 );
 end component;
 
-signal half_clk, quarter_clk            : std_logic := '0'; -- various clock domains for ALU, Memory, and everything else respectively (avoids PLLs)
-signal counter                          : integer := 1; -- Counter for clock division
+signal IFID_clk, IDEX_clk, EXMEM_clk, MEMWB_clk : std_logic := '0'; -- various clock signals that can be enabled or disabled
+signal stall_en                         : std_logic_vector(3 downto 0); -- Stalls according to the set bit position 0=IFID, 1=IDEX, 2=EXMEM, 3=MEMWB
 signal IF_INSTR, ID_INSTR               : std_logic_vector(15 downto 0); -- Instruction from various stages
 signal ID_opcode, EX_opcode, 
     MEM_opcode, WB_opcode               : std_logic_vector(6 downto 0); -- opcode during various stages
@@ -115,27 +116,17 @@ signal WB_DATA                          : std_logic_vector(15 downto 0); -- Data
 
 begin
 
-process (clk) begin   --Clocking process, based on counter incrementing on each clock
-    counter <= counter + 1;
-    case counter is
-        when 1 =>
-            null;
-        when 2 =>
-            half_clk <= not half_clk;
-        when 3 =>
-            null;
-        when 4 =>
-            half_clk <= not half_clk;
-            quarter_clk <= not quarter_clk;
-            counter <= 1;
-        when others =>
-            assert false report "Clock counter out of range" severity failure;
-    end case;
-end process;
-
 -- Controller
 
-MAINCONT    :   controller port map(clk=>clk, rst=>rst, ID_opcode=>ID_opcode, EX_opcode=>EX_opcode, MEM_opcode=>MEM_opcode, WB_opcode=>WB_opcode, ID_WRITE_EN=>ID_WRITE_EN);
+MAINCONT    :   controller port map(clk=>clk, rst=>rst, ID_opcode=>ID_opcode, EX_opcode=>EX_opcode, 
+                                    MEM_opcode=>MEM_opcode, WB_opcode=>WB_opcode, ID_WRITE_EN=>ID_WRITE_EN,
+                                    stall_en=>stall_en);
+
+-- -- Stalls according to the set bit position 0=IFID, 1=IDEX, 2=EXMEM, 3=MEMWB                                    
+IFID_clk <= clk when stall_en(0) = '0' else '0';
+IDEX_clk <= clk when stall_en(1) = '0' else '0';
+EXMEM_clk <= clk when stall_en(2) = '0' else '0';
+MEMWB_clk <= clk when stall_en(3) = '0' else '0';
 
 --==============================================================================
 --==============================================================================
@@ -146,7 +137,7 @@ MAINCONT    :   controller port map(clk=>clk, rst=>rst, ID_opcode=>ID_opcode, EX
 
 --I_FETCH :     InstructionFetcher port map(M_INSTR=>RAM_FROM_B, clk=>half_clk, double_clk=>clk, INSTR=>IF_INSTR, M_ADDR=>RAM_ADDR_B);
 IF_INSTR <= DEBUG_INSTR_IN;
-R_IFID  :     theregister        port map(clk=>quarter_clk, rst=>rst, d_in=>IF_INSTR, d_out=>ID_INSTR); -- IF/ID stage register
+R_IFID  :     theregister        port map(clk=>IFID_clk, rst=>rst, d_in=>IF_INSTR, d_out=>ID_INSTR); -- IF/ID stage register
 
 --==============================================================================
 -- Instruction Decode
@@ -178,9 +169,9 @@ ID_rsel <= ID_rc;
 IDEX_CONTROL_BITS_IN <= ID_opcode & ID_ra & "------"; -- Contains: opcode(15 downto 9), ra (8 downto 6)
 
 -- Inter-stage registers                
-R_IDEX_1:     theregister port map(clk=>quarter_clk, rst=>rst, d_in=>ID_data1, d_out=>EX_DATA1); -- ALU in1
-R_IDEX_2:     theregister port map(clk=>quarter_clk, rst=>rst, d_in=>ID_data2, d_out=>EX_DATA2); -- ALU in2
-R_IDEX_3:     theregister port map(clk=>quarter_clk, rst=>rst, d_in=>IDEX_CONTROL_BITS_IN, 
+R_IDEX_1:     theregister port map(clk=>IDEX_clk, rst=>rst, d_in=>ID_data1, d_out=>EX_DATA1); -- ALU in1
+R_IDEX_2:     theregister port map(clk=>IDEX_clk, rst=>rst, d_in=>ID_data2, d_out=>EX_DATA2); -- ALU in2
+R_IDEX_3:     theregister port map(clk=>IDEX_clk, rst=>rst, d_in=>IDEX_CONTROL_BITS_IN, 
                                    d_out=>IDEX_CONTROL_BITS_OUT);
 
 --==============================================================================
@@ -195,8 +186,8 @@ theALU: ALU port map(in1=>EX_DATA1, in2=>EX_DATA2, op_code=>EX_opcode, clk=>clk,
 EXMEM_CONTROL_BITS_IN <= EX_OPCODE & EX_FLAGS & EX_RA & "---"; -- Contains: Opcode(15 downto 9), Flags (8 downto 6), ra (5 downto 3)
 
 -- Inter-stage registers 
-R_EXMEM_1: theregister port map(clk=>quarter_clk, rst=>rst, d_in=>EX_AR, d_out=>MEM_AR); -- ALU output (AR)
-R_EXMEM_2: theregister port map(clk=>quarter_clk, rst=>rst, d_in=>EXMEM_CONTROL_BITS_IN, 
+R_EXMEM_1: theregister port map(clk=>EXMEM_clk, rst=>rst, d_in=>EX_AR, d_out=>MEM_AR); -- ALU output (AR)
+R_EXMEM_2: theregister port map(clk=>EXMEM_clk, rst=>rst, d_in=>EXMEM_CONTROL_BITS_IN, 
                                 d_out=>EXMEM_CONTROL_BITS_OUT);
 
 --==============================================================================
@@ -218,8 +209,8 @@ MEM_WB_DATA <= MEM_AR when MEM_opcode_val < 7 else
 MEMWB_CONTROL_BITS_IN <= MEM_OPCODE & MEM_FLAGS & MEM_RA & "---"; -- Contains: Opcode(15 downto 9), Flags (8 downto 6), ra (5 downto 3)
 
 -- Inter-stage registers        
-R_MEMWB_1: theregister port map(clk=>quarter_clk, rst=>rst, d_in=>MEM_WB_DATA, d_out=>WB_DATA);
-R_MEMWB_2: theregister port map(clk=>quarter_clk, rst=>rst, d_in=>MEMWB_CONTROL_BITS_IN, 
+R_MEMWB_1: theregister port map(clk=>MEMWB_clk, rst=>rst, d_in=>MEM_WB_DATA, d_out=>WB_DATA);
+R_MEMWB_2: theregister port map(clk=>MEMWB_clk, rst=>rst, d_in=>MEMWB_CONTROL_BITS_IN, 
                                 d_out=>MEMWB_CONTROL_BITS_OUT);
  
  --==============================================================================
