@@ -74,14 +74,6 @@ end processor;
 
 architecture Behaviour of processor is
 
-component controller is
-port(
-    clk, rst : in std_logic;
-    ID_opcode, EX_opcode, MEM_opcode, WB_opcode : in std_logic_vector(6 downto 0) := (others => '0');
-    ID_WRITE_EN : out std_logic := '0' -- Enable writing to the register
-);
-end component;
-
 component theregister is
 port(
     clk, rst : in std_logic;
@@ -118,6 +110,15 @@ port(
     wr_enable: in std_logic);
 end component;
 
+component RegisterArbitrator is
+port(
+    opcode_in   : in std_logic_vector(6 downto 0);  -- opcode of the "current" instruction
+    opcode_back : in std_logic_vector(6 downto 0);  -- opcode of the "writing back" instruction
+    clk         : in std_logic;                     -- Clock at twice the rate of the datapath
+    wr_en       : out std_logic                    -- Write enable for writeback
+);
+end component;
+
 component ALU is
 port ( 
     in1, in2 : in STD_LOGIC_VECTOR(15 downto 0);  --Input 1, Input 2 16-bit inputs including op code and fortmat A(0-3)
@@ -141,6 +142,7 @@ end component;
 
 signal half_clk, quarter_clk            : std_logic := '0'; -- various clock domains for ALU, Memory, and everything else respectively (avoids PLLs)
 signal counter                          : integer := 1; -- Counter for clock division
+signal current_pc, next_pc : std_logic_vector(15 downto 0);              --PC register current and next PC values
 signal IF_INSTR, ID_INSTR               : std_logic_vector(15 downto 0); -- Instruction from various stages
 signal ID_opcode, EX_opcode, 
     MEM_opcode, WB_opcode               : std_logic_vector(6 downto 0); -- opcode during various stages
@@ -185,11 +187,9 @@ process (clk) begin   --Clocking process, based on counter incrementing on each 
     end case;
 end process;
 
--- Controller
-
-MAINCONT    :   controller port map(clk=>clk, rst=>rst, ID_opcode=>ID_opcode, EX_opcode=>EX_opcode, MEM_opcode=>MEM_opcode, WB_opcode=>WB_opcode, ID_WRITE_EN=>ID_WRITE_EN);
-
+--PC Register
 --==============================================================================
+PC : theregister port map (clk=>clk, d_in => next_pc, d_out => current_pc, rst=>rst);
 --==============================================================================
 
 -- Start of the pipeline
@@ -205,7 +205,8 @@ R_IFID  :     theregister        port map(clk=>quarter_clk, rst=>rst, d_in=>IF_I
 
 I_DECODE:     InstructionDecoder port map(instruction=>ID_INSTR, opcode_out=>ID_opcode, 
                                           rd_1=>ID_rb, rd_2=>ID_rc, ra=>ID_ra, imm=>ID_imm);
-
+REG_ARB :     RegisterArbitrator port map(opcode_in=>ID_opcode, opcode_back=>WB_opcode, 
+                                          clk=>clk, wr_en=>ID_WRITE_EN); -- Register Arbitrator
 REG_FILE:     register_file      port map(clk=>clk, rst=>rst, rd_index1=>ID_rb, 
                                           rd_index2=>ID_rsel, rd_data1=>ID_data1, 
                                           rd_data2=>ID_RC_DATA, wr_index=>WB_ra, 
