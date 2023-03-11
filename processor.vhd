@@ -77,6 +77,15 @@ port(
     wr_enable: in std_logic);
 end component;
 
+component RegisterArbitrator is
+port(
+    opcode_in   : in std_logic_vector(6 downto 0);  -- opcode of the "current" instruction
+    opcode_back : in std_logic_vector(6 downto 0);  -- opcode of the "writing back" instruction
+    clk         : in std_logic;                     -- Clock at twice the rate of the datapath
+    wr_en       : out std_logic                    -- Write enable for writeback
+);
+end component;
+
 component ALU is
 port ( 
     in1, in2 : in STD_LOGIC_VECTOR(15 downto 0);  --Input 1, Input 2 16-bit inputs including op code and fortmat A(0-3)
@@ -97,6 +106,7 @@ end component;
 
 signal IFID_clk, IDEX_clk, EXMEM_clk, MEMWB_clk : std_logic := '0'; -- various clock signals that can be enabled or disabled
 signal stall_en                         : std_logic_vector(3 downto 0); -- Stalls according to the set bit position 0=IFID, 1=IDEX, 2=EXMEM, 3=MEMWB
+signal current_pc, next_pc : std_logic_vector(15 downto 0);              --PC register current and next PC values
 signal IF_INSTR, ID_INSTR               : std_logic_vector(15 downto 0); -- Instruction from various stages
 signal ID_opcode, EX_opcode, 
     MEM_opcode, WB_opcode               : std_logic_vector(6 downto 0); -- opcode during various stages
@@ -139,7 +149,9 @@ IDEX_clk <= clk when stall_en(1) = '0' else '0';
 EXMEM_clk <= clk when stall_en(2) = '0' else '0';
 MEMWB_clk <= clk when stall_en(3) = '0' else '0';
 
+--PC Register
 --==============================================================================
+PC : theregister port map (clk=>clk, d_in => next_pc, d_out => current_pc, rst=>rst);
 --==============================================================================
 
 -- Start of the pipeline
@@ -155,7 +167,8 @@ R_IFID  :     theregister        port map(clk=>IFID_clk, rst=>rst, d_in=>IF_INST
 
 I_DECODE:     InstructionDecoder port map(instruction=>ID_INSTR, opcode_out=>ID_opcode, 
                                           rd_1=>ID_rb, rd_2=>ID_rc, ra=>ID_ra, imm=>ID_imm);
-
+REG_ARB :     RegisterArbitrator port map(opcode_in=>ID_opcode, opcode_back=>WB_opcode, 
+                                          clk=>clk, wr_en=>ID_WRITE_EN); -- Register Arbitrator
 REG_FILE:     register_file      port map(clk=>clk, rst=>rst, rd_index1=>ID_rb, 
                                           rd_index2=>ID_rsel, rd_data1=>ID_data1, 
                                           rd_data2=>ID_RC_DATA, wr_index=>WB_ra, 
