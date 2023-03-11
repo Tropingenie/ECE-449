@@ -37,42 +37,30 @@ process(clk, rst) begin
     if rst = '1' then
         alu_stall_enable <= '0';
     elsif rising_edge(clk) then
-         case ex_opcode is 
-     
-         when "0000000" | "0000100" | "0000101" | "0000110" | "0000111" | "0100000" | "0100001"=>                    --NOP, NAND, SHR, SHL, TEST, OUT, IN
-         -- 1 clock (no delay)
-         null;     
-             
-         when "0000001" | "0000010" =>                    --ADD, SUB op
-        -- 2 clocks (1 clock delay)
-            if alu_stall_enable = '1' then
-                alu_stall_enable <= '0';
-            else
+        if counter > 0 then
+         counter <= counter - 1;
+        else
+            alu_stall_enable <= '0';
+             case ex_opcode is 
+         
+             when "0000000" | "0000100" | "0000101" | "0000110" | "0000111" | "0100000" | "0100001"=>                    --NOP, NAND, SHR, SHL, TEST, OUT, IN
+             -- 1 clock (no delay)
+             null;       
+             when "0000001" | "0000010" =>                    --ADD, SUB op
+            -- 2 clocks (1 clock delay)
+                counter <= 1;
                 alu_stall_enable <= '1';
-            end if;
-         when "0000011" =>                    --MULT op
-         -- 4 clocks (3 clock delay)
-            if alu_stall_enable = '1' then
-              case(counter) is
-                when 0 | 1 =>
-                    counter <= counter + 1; 
-                when 2 =>
-                    alu_stall_enable <= '0';
-                    counter <= 0;
-                when others =>
-                    assert false report "ALU stall counter out of range" severity failure;
-              end case;
-            else
-                 alu_stall_enable <= '1';
-            end if;
-             
-         when "UUUUUUU" | "XXXXXXX" =>
-             assert false report "Uninitialized opcode" severity note;    
-                     
-         when others =>
-             assert false report "ALU operation out of range" severity failure;
-             
-        end case;
+             when "0000011" =>                    --MULT op
+             -- 4 clocks (3 clock delay)
+                counter <= 3;
+                alu_stall_enable <= '1';
+             when "UUUUUUU" | "XXXXXXX" =>
+                 assert false report "Uninitialized opcode" severity note;              
+             when others =>
+                 assert false report "ALU operation out of range" severity failure;
+                 
+            end case;
+        end if;
     end if;
 end process;
 
