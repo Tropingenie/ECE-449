@@ -35,19 +35,31 @@ end component;
     signal clk, rst : std_logic;
     signal ROM_FROM, RAM_FROM_A, RAM_FROM_B, IN_PORT, DEBUG_INSTR_IN : std_logic_vector(15 downto 0);
     signal RAM_TO, OUT_PORT, RAM_ADDR_A, RAM_ADDR_B : std_logic_vector(15 downto 0);
-
+    
+ 
 begin
 
     UUT: processor port map(clk=>clk,rst=>rst,ROM_FROM=>ROM_FROM,RAM_FROM_A=>RAM_FROM_A,RAM_FROM_B=>RAM_FROM_B,IN_PORT=>IN_PORT,DEBUG_INSTR_IN=>DEBUG_INSTR_IN,RAM_TO=>RAM_TO,OUT_PORT=>OUT_PORT,RAM_ADDR_A=>RAM_ADDR_A,RAM_ADDR_B=>RAM_ADDR_B);
 
+
     process begin   --Clocking process, 500MhZ duty cycle
     clk <= '0';
-    wait for 10 us;
+    wait for 100 us;
     clk <= '1';
-    wait for 10 us;
+    wait for 100 us;
     end process;
     
     process begin   --behavioural process
+    rst <= '0';
+    DEBUG_INSTR_IN <= "0000000000000000";
+    wait until (clk='1' and clk'event);
+    rst <= '1';
+    wait until (clk='1' and clk'event);
+    rst <= '0';
+    wait until (clk='1' and clk'event);
+    wait until (clk='1' and clk'event);
+    wait until (clk='1' and clk'event);
+    wait until (clk='1' and clk'event);
     DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
     wait until (clk='1' and clk'event);
     wait until (clk='1' and clk'event);

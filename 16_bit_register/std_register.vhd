@@ -14,7 +14,7 @@ use IEEE.std_logic_1164.all;
 entity theRegister is
 port(
     clk, rst : in std_logic;
-    d_in : in std_logic_vector(15 downto 0) := (others=>'0');
+    d_in : in std_logic_vector(15 downto 0);
     d_out : out std_logic_vector(15 downto 0));
 end theRegister;
 
