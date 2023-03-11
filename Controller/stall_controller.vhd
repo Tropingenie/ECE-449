@@ -27,15 +27,18 @@ end StallController;
 
 architecture Behavioral of StallController is
 
-signal stall_IFID, stall_IDEX, stall_EXMEM, stall_MEMWB : std_logic;
+signal stall_IFID, stall_IDEX, stall_EXMEM, stall_MEMWB : std_logic := '0';
 
 begin
 
-stall_IFID  <= or_reduce(stall_stage);
-stall_IDEX  <= or_reduce(stall_stage(3 downto 1));
-stall_EXMEM <= or_reduce(stall_stage(3 downto 2));
+stall_IFID  <= stall_stage(3) or stall_stage(2) or stall_stage(1) or stall_stage(0);
+stall_IDEX  <= stall_stage(3) or stall_stage(2) or stall_stage(1);
+stall_EXMEM <= stall_stage(3) or stall_stage(2);
 stall_MEMWB <= stall_stage(3);
 
-stall_enable <= stall_MEMWB & stall_IDEX & stall_EXMEM & stall_MEMWB;
+stall_enable(3) <= stall_MEMWB;  
+stall_enable(2) <= stall_EXMEM;
+stall_enable(1) <= stall_IDEX;
+stall_enable(0) <= stall_IFID;
 
 end Behavioral;
