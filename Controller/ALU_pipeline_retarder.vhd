@@ -47,16 +47,15 @@ process(clk, rst) begin
              -- 1 clock (no delay)
              null;       
              when "0000001" | "0000010" =>                    --ADD, SUB op
-            -- 2 clocks (1 clock delay)
-                counter <= 1;
+                counter <= 0;
                 alu_stall_enable <= '1';        
              when "0000101" | "0000110" =>  -- SHR, SHL
-             -- 3 clocks (2 clock delay)
+             
                 counter <= 2;
                 alu_stall_enable <= '1';
              when "0000011" =>                    --MULT op
-             -- 4 clocks (3 clock delay)
-                counter <= 3;
+            
+                counter <= 2;
                 alu_stall_enable <= '1';
              when "UUUUUUU" | "XXXXXXX" =>
                  assert false report "Uninitialized opcode" severity note;              
