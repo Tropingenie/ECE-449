@@ -2,11 +2,8 @@
 --
 -- Register Arbitrator
 --
--- Plug in module to arbitrate register file access. Allows
--- writing when one or fewer instructions are used, and
--- sends a "pause" signal to stop the pipeline for two
--- register instructions. In current state, Register arbitrator 
--- favours write back.
+-- Decides whether to send a bubble or the instrucion based
+-- on whether a register is being written back to.
 --
 -- Engineer: Kai Herrero, Benjamin Lyne
 --
@@ -18,10 +15,9 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity RegisterArbitrator is
 port(
-    opcode_in   : in std_logic_vector(6 downto 0);  -- opcode of the "current" instruction
-    opcode_back : in std_logic_vector(6 downto 0);  -- opcode of the "writing back" instruction
-    clk         : in std_logic;                     -- Clock at twice the rate of the datapath
-    wr_en       : out std_logic                     -- Write enable for writeback
+    ID_opcode       : in std_logic_vector(6 downto 0);
+    clk, stall_IFID : in std_logic;                     
+    bubble          : out std_logic                    
 
 );
 end RegisterArbitrator;
@@ -29,8 +25,7 @@ end RegisterArbitrator;
 architecture Behavioral of RegisterArbitrator is
 
 --SIGNAL DECLARATIONS HERE--
-signal counter : integer := 0;
-signal write   : std_logic := '0';
+signal bubble_sent : std_logic;
 
 begin
     
@@ -38,27 +33,22 @@ begin
     process(clk)
     begin
         if(RISING_EDGE(clk)) then
-         counter <= counter + 1;
-    
-         if (counter mod 3) = 0 then
-             counter <= 0;    
-               
-             case opcode_back is
-             
-                when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110"  =>       --ADD/SUB/MULT/NAND/SHIFTR/SHIFTL Ops
-                    write <= NOT write;
-                    
-                when others =>
-                    write <= '0';
-                    assert false report "Opcode is not a writeback" severity note;
-                                           
-            end case;  
-                      
-         end if;
-    
-    
-         wr_en <= write;
-            
+        case(ID_opcode) is
+            when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110" | "0100000"=> -- Format A that use registers
+                if bubble_sent = '0' then
+                    bubble <= '1';
+                    bubble_sent <= '1';
+                elsif stall_IFID = '1' then
+                null;
+                else
+                bubble_sent <= '0';
+                bubble <= '0';
+                end if;
+                
+            when others =>
+                null;
+ 
+          end case;  
       end if;
     end process;
 end Behavioral;

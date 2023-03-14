@@ -19,8 +19,8 @@ use IEEE.NUMERIC_STD.ALL;
 entity InstructionFetcher is
 port(
     M_INSTR : in std_logic_vector(15 downto 0); -- Input from memory
-    clk, rst : in std_logic;
-    INSTR, M_ADDR : out std_logic_vector(15 downto 0) -- Instruction output and memory address issuing respectively
+    clk, rst, bubble : in std_logic;
+    INSTR, PC : out std_logic_vector(15 downto 0) -- Instruction output and memory address issuing respectively
 );
 end InstructionFetcher;
 
@@ -33,21 +33,24 @@ port(
     d_out : out std_logic_vector(15 downto 0));
 end component;
 
-signal current_pc, next_pc : std_logic_vector(15 downto 0);
+signal current_pc, next_pc : std_logic_vector(15 downto 0) := (others => '0');
 
 begin
 
-    PC : theregister port map (clk=>clk, rst=>rst, d_in => next_pc, d_out => current_pc);
-
-    INSTR <= M_INSTR; -- Just pass through. This module is only a controller
-
+    REG_PC : theregister port map (clk=>clk, rst=>rst, d_in => next_pc, d_out => current_pc);
     process(clk, rst)
     begin
         if rst = '1' or next_pc = "UUUU" then
-            M_ADDR <= (others=>'0');
+            PC <= (others=>'0');
         elsif RISING_EDGE(clk) then
-            next_pc <= std_logic_vector(unsigned(current_pc) + x"0002");
-            M_ADDR <= current_pc;
+            if bubble = '1' then
+                next_pc <= current_pc;
+                INSTR <= x"0000";
+            else
+                next_pc <= std_logic_vector(unsigned(current_pc) + x"0002");
+                INSTR <= M_INSTR; -- Just pass through. This module is only a controller
+            end if;
+            PC <= current_pc;
         end if;
     end process;
 
