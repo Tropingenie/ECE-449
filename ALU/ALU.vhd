@@ -57,12 +57,20 @@ begin
             when "0000000" =>                    --NOP
                 data3 <= (others => '0');        
                 
-            when "0000001" =>                    --ADD op
+            when "0000001" =>                    --ADD op (rare case of ADD overflow not consisdered
                 if (data2 + data1) = 0 then
                     data3 <= data1 + data2;
                     o_flag <= '1';
                 else
-                    data3 <= data1 + data2;                     
+                    if to_integer(signed(data3)) < 0 then --check for negative result from an ADD
+                        n_flag <= '1';
+                    else
+                        n_flag <= '0';
+                    end if;
+                    
+                    data3 <= data1 + data2;
+                    o_flag <= '0';
+                                       
                 end if;
                 
             when "0000010" =>                    --SUB op
@@ -72,6 +80,7 @@ begin
                     o_flag <= '1';
                 else
                     data3 <= data1 - data2;
+                    
                 end if;                   
                 
             when "0000011" =>                    --MULT op
