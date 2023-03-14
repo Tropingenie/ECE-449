@@ -34,21 +34,19 @@ port(
 end component;
 
 signal current_pc, next_pc : std_logic_vector(15 downto 0) := (others => '0');
-signal reg_clk : std_logic;
 
 begin
 
-    REG_PC : theregister port map (clk=>reg_clk, rst=>rst, d_in => next_pc, d_out => current_pc);
+    REG_PC : theregister port map (clk=>clk, rst=>rst, d_in => next_pc, d_out => current_pc);
     process(clk, rst)
     begin
         if rst = '1' or next_pc = "UUUU" then
             PC <= (others=>'0');
         elsif RISING_EDGE(clk) then
             if bubble = '1' then
-                reg_clk <= '0';
+                next_pc <= current_pc;
                 INSTR <= x"0000";
             else
-                reg_clk <= clk;
                 next_pc <= std_logic_vector(unsigned(current_pc) + x"0002");
                 INSTR <= M_INSTR; -- Just pass through. This module is only a controller
             end if;

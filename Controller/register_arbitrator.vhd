@@ -34,6 +34,7 @@ begin
         if rst = '1' then
             bubble <= '0';
             bubble_sent <= '0';
+        end if;
         if(RISING_EDGE(clk)) then
         case(ID_opcode) is
             when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110" | "0100000"=> -- Format A that use registers
