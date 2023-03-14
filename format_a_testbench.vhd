@@ -50,9 +50,9 @@ begin
 
     process begin   --Clocking process, 500MhZ duty cycle
     clk <= '0';
-    wait for 20 us;
+    wait for 1 us;
     clk <= '1';
-    wait for 20 us;
+    wait for 1 us;
     end process;
     
     process(clk) begin
