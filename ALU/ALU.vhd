@@ -49,6 +49,7 @@ begin
     z_flag <= '0';
     n_flag <= '0';
     o_flag <= '0';
+    shift_amt <= 0;
     
     elsif(RISING_EDGE(clk)) then
         case op_code is 

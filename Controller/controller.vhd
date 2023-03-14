@@ -41,7 +41,7 @@ end component;
 component ALUPipelineRetarder is
   Port (
   clk, rst : in std_logic;
-  ex_opcode : in std_logic_vector(6 downto 0);
+  ID_OPCODE : in std_logic_vector(6 downto 0);
   alu_stall_enable : inout std_logic-- inout used to feedback internally
  );
 end component;
@@ -55,7 +55,7 @@ REG_ARB     :  RegisterArbitrator port map(ID_opcode=>ID_opcode, clk=>clk, rst=>
                                           
 STALL_CONT :  StallController port map(stall_stage=>stall_stage, stall_enable=>stall_en); -- Stall pipeline if necessary
 
-ALUPR : ALUPipelineRetarder port map(clk=>clk, rst=>rst, ex_opcode=>EX_OPCODE, alu_stall_enable=>ALU_STALL);
+ALUPR : ALUPipelineRetarder port map(clk=>clk, rst=>rst, ID_OPCODE=>ID_OPCODE, alu_stall_enable=>ALU_STALL);
 
 process(clk, rst) begin
     if rst = '1' then

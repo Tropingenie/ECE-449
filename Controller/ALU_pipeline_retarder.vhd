@@ -22,7 +22,7 @@ use IEEE.NUMERIC_STD.ALL;
 entity ALUPipelineRetarder is
   Port (
     clk, rst : in std_logic;
-    ex_opcode : in std_logic_vector(6 downto 0);
+    ID_OPCODE : in std_logic_vector(6 downto 0); -- Check the opcode incoming to the ALU
     alu_stall_enable : inout std_logic := '0'-- inout used to feedback internally
    );
 end ALUPipelineRetarder;
@@ -41,7 +41,7 @@ process(clk, rst) begin
          counter <= counter - 1;
         else
             alu_stall_enable <= '0';
-             case ex_opcode is 
+             case ID_OPCODE is 
          
              when "0000000" | "0000100" | "0000111" | "0100000" | "0100001"=>                    --NOP, NAND, TEST, OUT, IN
              -- 1 clock (no delay)
