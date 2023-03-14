@@ -67,6 +67,13 @@ process(clk, rst) begin
         
         --stall the pipeline on longer ALU operations
         stall_stage(2) <= ALU_STALL;   
+        
+        case (WB_OPCODE) is
+            when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110" | "0100000"=> -- Format A that use registers
+                ID_WRITE_EN <= '1';
+            when others =>
+                ID_WRITE_EN <= '1';
+        end case;    
     end if;
 
 end process;
