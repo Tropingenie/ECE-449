@@ -26,8 +26,8 @@ architecture Behaviour of controller is
 component RegisterArbitrator is
 port(
     ID_opcode       : in std_logic_vector(6 downto 0);
-    clk, stall_IFID : in std_logic;                     
-    bubble          : out std_logic                    
+    clk, rst, stall_IFID : in std_logic;                     
+    bubble          : out std_logic := '0'                                       
 );
 end component;
 
@@ -51,7 +51,7 @@ signal ALU_STALL : std_logic;
 
 begin
 
-REG_ARB     :  RegisterArbitrator port map(ID_opcode=>ID_opcode, clk=>clk, bubble=>bubble, stall_IFID=>stall_stage(0)); -- Introduces bubbles when register conflcit occurs
+REG_ARB     :  RegisterArbitrator port map(ID_opcode=>ID_opcode, clk=>clk, rst=>rst, bubble=>bubble, stall_IFID=>stall_stage(0)); -- Introduces bubbles when register conflcit occurs
                                           
 STALL_CONT :  StallController port map(stall_stage=>stall_stage, stall_enable=>stall_en); -- Stall pipeline if necessary
 

@@ -125,7 +125,7 @@ begin
 
 MAINCONT    :   controller port map(clk=>clk, rst=>rst, ID_opcode=>ID_opcode, EX_opcode=>EX_opcode, 
                                     MEM_opcode=>MEM_opcode, WB_opcode=>WB_opcode, ID_WRITE_EN=>ID_WRITE_EN,
-                                    stall_en=>stall_en);
+                                    stall_en=>stall_en, bubble=>bubble);
                                    
 
 -- -- Stalls according to the set bit position 0=IFID, 1=IDEX, 2=EXMEM, 3=MEMWB                                    

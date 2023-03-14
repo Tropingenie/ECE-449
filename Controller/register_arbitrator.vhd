@@ -16,22 +16,24 @@ use IEEE.NUMERIC_STD.ALL;
 entity RegisterArbitrator is
 port(
     ID_opcode       : in std_logic_vector(6 downto 0);
-    clk, stall_IFID : in std_logic;                     
-    bubble          : out std_logic                    
-
+    clk, rst, stall_IFID : in std_logic;                     
+    bubble          : out std_logic := '0'                   
 );
 end RegisterArbitrator;
 
 architecture Behavioral of RegisterArbitrator is
 
 --SIGNAL DECLARATIONS HERE--
-signal bubble_sent : std_logic;
+signal bubble_sent : std_logic := '0';
 
 begin
     
 
-    process(clk)
+    process(clk, rst)
     begin
+        if rst = '1' then
+            bubble <= '0';
+            bubble_sent <= '0';
         if(RISING_EDGE(clk)) then
         case(ID_opcode) is
             when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110" | "0100000"=> -- Format A that use registers
