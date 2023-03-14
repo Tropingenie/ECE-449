@@ -206,7 +206,7 @@ R_IFID  :     theregister        port map(clk=>quarter_clk, rst=>rst, d_in=>IF_I
 I_DECODE:     InstructionDecoder port map(instruction=>ID_INSTR, opcode_out=>ID_opcode, 
                                           rd_1=>ID_rb, rd_2=>ID_rc, ra=>ID_ra, imm=>ID_imm);
 REG_ARB :     RegisterArbitrator port map(opcode_in=>ID_opcode, opcode_back=>WB_opcode, 
-                                          clk=>clk, wr_en=>ID_WRITE_EN); -- Register Arbitrator
+                                          clk=>clk, wr_en=>ID_WRITE_EN); -- Register Arbitrator                                       
 REG_FILE:     register_file      port map(clk=>clk, rst=>rst, rd_index1=>ID_rb, 
                                           rd_index2=>ID_rsel, rd_data1=>ID_data1, 
                                           rd_data2=>ID_RC_DATA, wr_index=>WB_ra, 

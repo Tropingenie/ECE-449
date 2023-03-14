@@ -18,6 +18,7 @@ entity InstructionDecoder is
 port(
     instruction     : in std_logic_vector(15 downto 0);
     opcode_out      : out std_logic_vector(6 downto 0);
+    br_instr_out    : out std_logic_vector(15 downto 0); --if theres a branch then this outputs to the BranchModule
     rd_1,               -- Address of register of first operand
     rd_2,               -- Address of register of second operand
     ra              : out std_logic_vector(2 downto 0);
@@ -35,21 +36,28 @@ port(
     d_out : out std_logic_vector(15 downto 0));    
 end component;
 
-signal current_pc, next_pc : std_logic_vector(15 downto 0);
-signal branch_instr_op : std_logic_vector(6 downto 0);
-signal shift_amt : integer;
-
 signal opcode : std_logic_vector(6 downto 0);
 
 begin
 
     opcode <= instruction(15 downto 9);
-    opcode_out <= opcode;
+    
+    
     
     process(opcode)
     begin
     	--assert false report "Instruction: " & to_hstring(instruction) severity note;
     	--assert false report "Opcode: " & to_hstring(opcode) severity note;
+    	
+        if opcode(6 downto 5) = "00" then --Format A instruction, forward opcode
+            opcode_out <= opcode;
+        elsif opcode(6 downto 5) = "10" then --Format B instruction, pause pipe and go to branch module
+            opcode_out <= "0000000";
+            br_instr_out <= instruction;
+        elsif opcode(6 downto 5) = "11" then
+             --write logic for push pop load.sp and RTI instructions here 
+        end if;
+            
         case opcode is
             when "0000000" => --Format A0 (NOP)  
             	assert false report "debug" severity note;
@@ -76,82 +84,13 @@ begin
                 ra   <= instruction(8 downto 6); 
                 rd_1 <= (others=>'0');
                 rd_2 <= (others=>'0');
-                imm  <= (others=>'0'); 
-            when "1000000" =>   --BRR op
-                                
-                if instruction(8) = '1' then --shift right (negative displacement value)
-                    shift_amt <=  to_integer(signed(instruction(8 downto 0)));
-                    next_pc <= std_logic_vector(SHIFT_RIGHT(signed(current_pc), shift_amt));
-                    shift_amt <= 0;
-                    
-                elsif instruction(8) = '0' then --shift left (positive displacement value
-                    shift_amt <=  to_integer(signed(instruction(8 downto 0)));
-                    next_pc <= std_logic_vector(SHIFT_RIGHT(signed(current_pc), shift_amt));
-                    shift_amt <= 0;
-               
-                else
-                     assert false report "Incorrect displacement value in the instruction_fetcher.vhd module" severity note;
-                end if;
-                
-            when "1000001" => --BRR.N op 
-                if n_flag = '1' then
-                    if instruction(8) = '1' then --shift right (negative displacement value)
-                        shift_amt <=  to_integer(signed(instruction(8 downto 0)));
-                        next_pc <= std_logic_vector(SHIFT_RIGHT(signed(current_pc), shift_amt));
-                        shift_amt <= 0;
-                                        
-                    elsif instruction(8) = '0' then --shift left (positive displacement value
-                        shift_amt <=  to_integer(signed(instruction(8 downto 0)));
-                        next_pc <= std_logic_vector(SHIFT_RIGHT(signed(current_pc), shift_amt));
-                        shift_amt <= 0;
-                                   
-                    else
-                        assert false report "Incorrect displacement value in the instruction_fetcher.vhd module" severity note;
-                    end if;
-                    
-                elsif n_flag = '0' then --if value not negative    
-                next_pc <= std_logic_vector(unsigned(current_pc) + x"0002"); --increment pc as usual
-                
-                else
-                    assert false report "n_flag not '0' or '1' " severity note;
-                end if;
-                
-            when "1000010" => --BRR.Z op
-                if z_flag = '1' then
-                    if instruction(8) = '1' then --shift right (negative displacement value)
-                        shift_amt <=  to_integer(signed(instruction(8 downto 0)));
-                        next_pc <= std_logic_vector(SHIFT_RIGHT(signed(current_pc), shift_amt));
-                        shift_amt <= 0;
-                                        
-                    elsif instruction(8) = '0' then --shift left (positive displacement value
-                        shift_amt <=  to_integer(signed(instruction(8 downto 0)));
-                        next_pc <= std_logic_vector(SHIFT_RIGHT(signed(current_pc), shift_amt));
-                        shift_amt <= 0;
-                                   
-                    else
-                        assert false report "Incorrect displacement value in the instruction_fetcher.vhd module" severity note;
-                    end if;
-                    
-                elsif z_flag = '0' then --if value not zero   
-                next_pc <= std_logic_vector(unsigned(current_pc) + x"0002"); --increment pc as usual
-                
-                else
-                    assert false report "z_flag not '0' or '1' " severity note;
-                end if;
-            
-            when "1000011" => --BR op
-                
-            when "1000100" =>
-            when "1000101" =>
-            when "1000110" =>
-            when "1000111" =>
-                   --send opcode to register arbitrator for return
+                imm  <= (others=>'0');
+            when "1000011" => --Format B2 (BR) [Need to graba R[ra] from reg file TODO!]
+                rd_1 <= instruction(8 downto 6);                       
             when "UUUUUUU" =>
             	assert false report "Initializing" severity note;
             when others =>
-                assert false report "Opcode operation out of range" severity failure;
-                
-            
+                assert false report "Opcode operation out of range" severity failure;    
                 
         end case;
     end process;
