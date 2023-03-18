@@ -19,8 +19,9 @@ use IEEE.NUMERIC_STD.ALL;
 entity processor is
 port(
     clk, rst : in std_logic;
-    ROM_FROM, RAM_FROM_A, RAM_FROM_B, IN_PORT, DEBUG_INSTR_IN : in std_logic_vector(15 downto 0);
-    RAM_TO, OUT_PORT, RAM_ADDR_A, RAM_ADDR_B : out std_logic_vector(15 downto 0)
+    ROM_FROM, RAM_FROM_A, RAM_FROM_B, IN_PORT : in std_logic_vector(15 downto 0);
+    RAM_TO, OUT_PORT, RAM_ADDR_A, RAM_ADDR_B  : out std_logic_vector(15 downto 0);
+    ram_ena, ram_enb, rom_en, we              : out std_logic
 );
 end processor;
 
