@@ -18,11 +18,11 @@ begin
 
     with data_mem_sel select WB_DATA <= 
         M_DATA when '1',
-        AR when '0';
+        AR when others;
         
     with IO_SEL select M_DATA <=
         IN_PORT when '1',
-        RAM_READA when '0';
+        RAM_READA when others;
         
     process(io_sel) begin
         case io_sel is

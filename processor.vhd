@@ -21,7 +21,7 @@ port(
     clk, rst : in std_logic;
     ROM_FROM, RAM_FROM_A, RAM_FROM_B, IN_PORT : in std_logic_vector(15 downto 0);
     RAM_TO, OUT_PORT, RAM_ADDR_A, RAM_ADDR_B  : out std_logic_vector(15 downto 0);
-    ram_ena, ram_enb, rom_en, we              : out std_logic
+    ram_ena, ram_enb, rom_en, ram_we              : out std_logic
 );
 end processor;
 
@@ -30,10 +30,14 @@ architecture Behaviour of processor is
 component controller is
 port(
     clk, rst : in std_logic;
-    ID_opcode, EX_opcode, MEM_opcode, WB_opcode : in std_logic_vector(6 downto 0) := (others => '0');
-    ID_WRITE_EN : inout std_logic := '0'; -- Enable writing to the register. INOUT used so we can feedback into the controller internally
+    ID_opcode, EX_opcode, MEM_opcode, WB_opcode : in std_logic_vector(6 downto 0);
+    ID_WRITE_EN : inout std_logic; -- Enable writing to the register. INOUT used so we can feedback into the controller internally
     stall_en : out std_logic_vector(3 downto 0); -- Stalls according to the set bit position 0=IFID, 1=IDEX, 2=EXMEM, 3=MEMWB
-    bubble : out std_logic
+    bubble : out std_logic; -- Tells the pipeline to introduce a bubble
+    data_mem_sel : out STD_LOGIC; -- 1 when reading from data memory, 0 when passing AR from ALU/writing to memory
+    instr_mem_sel : out STD_LOGIC; -- 1 when using RAM, 0 when using ROM
+    io_sel : out STD_LOGIC; -- 1 when using IO, 0 when using memory
+    ram_ena, ram_enb, we : out std_logic 
 );
 end component;
 
@@ -85,12 +89,9 @@ end component;
 
 component MemoryAccessUnit is
 port(
-    opcode  : in        std_logic_vector(6 downto 0);
-    AR      : in        std_logic_vector(15 downto 0);  -- Result from ALU
-    M_ADDR  : out       std_logic_vector(15 downto 0);  -- Address line to memory
-    M_DATA  : inout     std_logic_vector(15 downto 0);  -- Data line to/from mem
-    DATA_OUT: out       std_logic_vector(15 downto 0);  -- Output to MEM/WB
-    clk, rst: in        std_logic                       -- Clock four times as fast as processor to finish before memory strobes
+    AR, IN_PORT, RAM_READA : in std_logic_vector(15 downto 0);
+    WB_DATA, OUT_PORT, RAM_WRITE : out std_logic_vector(15 downto 0);
+    data_mem_sel, io_sel : in std_logic
 );
 end component;
 
@@ -119,6 +120,7 @@ signal MEM_WB_DATA, MEM_DATA            : std_logic_vector(15 downto 0); -- Inte
 signal MEM_OPCODE_VAL                   : unsigned(15 downto 0); -- For comparison using <, >, etc
 signal WB_DATA                          : std_logic_vector(15 downto 0); -- Data to write back in WB stage
 signal bubble                           : std_logic; -- Signal to indicate to IF to introduce a bubble
+signal data_mem_sel, instr_mem_sel, io_sel : std_logic; -- Signals to control during memory access
 
 begin
 
@@ -126,7 +128,9 @@ begin
 
 MAINCONT    :   controller port map(clk=>clk, rst=>rst, ID_opcode=>ID_opcode, EX_opcode=>EX_opcode, 
                                     MEM_opcode=>MEM_opcode, WB_opcode=>WB_opcode, ID_WRITE_EN=>ID_WRITE_EN,
-                                    stall_en=>stall_en, bubble=>bubble);
+                                    stall_en=>stall_en, bubble=>bubble, data_mem_sel=>data_mem_sel, 
+                                    instr_mem_sel=>instr_mem_sel, io_sel=>io_sel, ram_ena=>ram_ena,
+                                    ram_enb=>ram_enb, we=>ram_we);
                                    
 
 -- -- Stalls according to the set bit position 0=IFID, 1=IDEX, 2=EXMEM, 3=MEMWB                                    
@@ -158,15 +162,6 @@ REG_FILE:     register_file      port map(clk=>clk, rst=>rst, rd_index1=>ID_rb,
                                           wr_data=>WB_DATA, wr_enable=>ID_WRITE_EN);
 
 ID_rsel <= ID_rc;  
-
--- MUX controlled by register arbitrator
---process(ID_WRITE_EN) begin
---    case(ID_WRITE_EN) is
---        when '0' => ID_rsel <= ID_rc;   
---        when '1' => ID_rsel <= WB_ra;
---        when others => null;
---    end case;
---end process;
 
 -- Register/Immediate select for input to the ALU
  ID_DATA2 <=  x"000" & ID_imm when ID_opcode = "0000110" or ID_opcode = "0000101" else -- Format A2 needs the immediate as the second operand
@@ -203,14 +198,13 @@ MEM_OPCODE <= EXMEM_CONTROL_BITS_OUT(15 downto 9);
 MEM_FLAGS <= EXMEM_CONTROL_BITS_OUT(8 downto 6);
 MEM_RA <= EXMEM_CONTROL_BITS_OUT(5 downto 3);
 MEM_OPCODE_VAL <= unsigned("000000000" & MEM_OPCODE);
--- NOTE: Memory access not implemented yet (waiting until IN, OUT, and L format instructions are implemented)
--- Uncomment the following line once memory and memory control is to be implemented
---MEM:    MemoryAccessUnit port map(opcode=>MEM_OPCODE, clk=>clk, rst=>rst, AR=>MEM_AR,M_ADDR=>);
+
+MEM:    MemoryAccessUnit port map(AR=>MEM_AR, IN_PORT=>IN_PORT, RAM_READA=>RAM_FROM_A, WB_DATA=>MEM_WB_DATA, OUT_PORT=>OUT_PORT, RAM_WRITE=>RAM_TO, data_mem_sel=>data_mem_sel, io_sel=>io_sel);
 
 -- Select AR from ALU or data from memory to pass to WB stage
-MEM_WB_DATA <= MEM_AR when MEM_opcode_val < 7 else
-           MEM_DATA when (MEM_opcode_val >= 16 and MEM_opcode_val <= 19) or MEM_opcode_val = 32 or MEM_opcode_val = 33 else
-           (others=>'-');--don't care
+--MEM_WB_DATA <= MEM_AR when MEM_opcode_val < 7 else
+--           MEM_DATA when (MEM_opcode_val >= 16 and MEM_opcode_val <= 19) or MEM_opcode_val = 32 or MEM_opcode_val = 33 else
+--           (others=>'-');--don't care
 
 -- Concatenate control bits for input to register
 MEMWB_CONTROL_BITS_IN <= MEM_OPCODE & MEM_FLAGS & MEM_RA & "---"; -- Contains: Opcode(15 downto 9), Flags (8 downto 6), ra (5 downto 3)
