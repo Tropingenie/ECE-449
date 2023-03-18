@@ -199,7 +199,8 @@ MEM_FLAGS <= EXMEM_CONTROL_BITS_OUT(8 downto 6);
 MEM_RA <= EXMEM_CONTROL_BITS_OUT(5 downto 3);
 MEM_OPCODE_VAL <= unsigned("000000000" & MEM_OPCODE);
 
-MEM:    MemoryAccessUnit port map(AR=>MEM_AR, IN_PORT=>IN_PORT, RAM_READA=>RAM_FROM_A, WB_DATA=>MEM_WB_DATA, OUT_PORT=>OUT_PORT, RAM_WRITE=>RAM_TO, data_mem_sel=>data_mem_sel, io_sel=>io_sel);
+-- MEM gets forwarded data from ALU to solve latency issue for now
+MEM:    MemoryAccessUnit port map(AR=>EX_AR, IN_PORT=>IN_PORT, RAM_READA=>RAM_FROM_A, WB_DATA=>MEM_WB_DATA, OUT_PORT=>OUT_PORT, RAM_WRITE=>RAM_TO, data_mem_sel=>data_mem_sel, io_sel=>io_sel);
 
 -- Select AR from ALU or data from memory to pass to WB stage
 --MEM_WB_DATA <= MEM_AR when MEM_opcode_val < 7 else
