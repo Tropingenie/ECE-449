@@ -26,13 +26,16 @@ port(
     Q : out std_logic);
 end component;
 
+signal storage : std_logic_vector(15 downto 0);
+
 begin
 
 process(clk) begin
     if rst = '1' then
         d_out <= (others=>'0');
     elsif rising_edge(clk) then
-    d_out <= d_in;
+        storage <= d_in;
+        d_out <= storage;
     end if;
     end process;
 
