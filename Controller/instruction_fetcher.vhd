@@ -18,53 +18,53 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity InstructionFetcher is
 port(
-    M_INSTR : in std_logic_vector(15 downto 0); -- Input from memory
-    clk, rst,bubble : in std_logic; -- clock at twice the rate of the datapath, PC gets double clk to strobe properly
-    PC_IN  : in std_logic_vector(15 downto 0); --input value from PC register
-    PC_OUT : out std_logic_vector(15 downto 0); --output value to the PC register
+    --System Signals
+    clk, rst, bubble : in std_logic;                           -- clock at twice the rate of the datapath, PC gets double clk to strobe properly
+    
+    --PC Register Input and Output
+    PC_IN  : in std_logic_vector(15 downto 0);         -- Input value from PC register
+    PC_OUT : out std_logic_vector(15 downto 0);        -- Output value to the PC register
+    
+    --Memory Input and Output
+    M_INSTR : in std_logic_vector(15 downto 0);        -- Input from memory
     INSTR, M_ADDR : out std_logic_vector(15 downto 0); -- Instruction output and memory address issuing respectively
-    n_flag, z_flag : in std_logic --ALU outputs for negative and zero branches
+    
+    --Branch Output Signals
+    BR_INST : out std_logic_vector(6 downto 0);        -- Branch instruction opcode value
+    BR_PC   : out std_logic_vector(15 downto 0)        -- Branch instruction PC value
 );
 end InstructionFetcher;
 
 architecture Behaviour of InstructionFetcher is
 
-signal current_pc, next_pc : std_logic_vector(15 downto 0);
+signal old_pc, new_pc : std_logic_vector(15 downto 0);
 signal branch_instr_op : std_logic_vector(6 downto 0);
 signal shift_amt : integer;
 
 begin
 
-    INSTR <= M_INSTR; -- Just pass through. This module is only a controller
+    INSTR <= M_INSTR;                                                 -- Just pass through. This module is only a controller
     
     
     process(clk, rst)
     begin
-    
-        if M_INSTR(15) = '1' then                --check for branch op in current instr
-           branch_instr_op <= M_INSTR(15 downto 9); 
-           end if;
         
-        if rst = '1' or next_pc = "UUUU" then
-            PC <= (others=>'0');
-        elsif RISING_EDGE(clk) then
-            current_pc <= PC_IN;
-            next_pc <= std_logic_vector(unsigned(current_pc) + x"0002");
-            M_ADDR <= current_pc;
-           
+        if rst = '1' or new_pc = "UUUU" then                         -- Handle reset or uninitialized values
+            old_pc <= (others=>'0');
+            new_pc <= (others=>'0');
             
+        elsif RISING_EDGE(clk) then                                  -- Update PC for the instruction received
+            old_pc <= PC_IN;
+            new_pc <= std_logic_vector(unsigned(old_pc) + x"0002"); 
+    
+            if M_INSTR(15) = '1' then                                -- Check for branch op in current instr on rising clock
+               BR_INST <= M_INSTR(15 downto 9);
+               BR_PC   <= new_pc;
+            end if;
             
-            case branch_instr_op is --need PC saving operation
-                
-                
-                when "UUUUUUU" | "XXXXXXX" =>
-                    assert false report "Uninitialized data for branching in the instruction_fetcher.vhd module" severity note;
-                when others =>
-                    assert false report "Branch op not recognized in instruction_fetcher.vhd module" severity failure;
-            end case;
+            PC_OUT <= new_pc;                                        -- Update the PC with the current PC value
+            M_ADDR <= std_logic_vector(unsigned(new_pc) + x"0002");  -- Ask Memory for the next instruction after the new one that just came in
             
-        end if;
-        PC_OUT <= next_pc;
+        end if; 
     end process;
-
 end Behaviour;
