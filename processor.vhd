@@ -83,9 +83,13 @@ end component;
 
 component InstructionFetcher is
 port(
-    M_INSTR : in std_logic_vector(15 downto 0); -- Input from memory
-    clk, double_clk : in std_logic; -- clock at twice the rate of the datapath, PC gets double clk to strobe properly
-    INSTR, M_ADDR : out std_logic_vector(15 downto 0) -- Instruction output and memory address issuing respectively
+    clk, rst        : in std_logic;                           
+    PC_IN           : in std_logic_vector(15 downto 0);         
+    PC_OUT          : out std_logic_vector(15 downto 0);        
+    M_INSTR         : in std_logic_vector(15 downto 0);        
+    INSTR, M_ADDR   : out std_logic_vector(15 downto 0); 
+    BR_INSTR        : out std_logic_vector(6 downto 0);        
+    BR_PC           : out std_logic_vector(15 downto 0)        
 );
 end component;
 
@@ -142,8 +146,11 @@ end component;
 
 signal half_clk, quarter_clk            : std_logic := '0'; -- various clock domains for ALU, Memory, and everything else respectively (avoids PLLs)
 signal counter                          : integer := 1; -- Counter for clock division
-signal current_pc, next_pc : std_logic_vector(15 downto 0);              --PC register current and next PC values
 signal IF_INSTR, ID_INSTR               : std_logic_vector(15 downto 0); -- Instruction from various stages
+signal IF_PC_IN                         : std_logic_vector(15 downto 0); -- Instruction fetcher PC in from PC register
+signal IF_PC_OUT                        : std_logic_vector(15 downto 0); -- PC register in from Instruction fetcher
+signal IF_BR_PC                         : std_logic_vector(15 downto 0); -- Instruction fetcher to branch module branch PC
+signal IF_BR_INSTR                      : std_logic_vector(15 downto 0); -- Instruction fetcher to branch module 
 signal ID_opcode, EX_opcode, 
     MEM_opcode, WB_opcode               : std_logic_vector(6 downto 0); -- opcode during various stages
 signal ID_ra, ID_rb, ID_rc, 
@@ -189,15 +196,17 @@ end process;
 
 --PC Register
 --==============================================================================
-PC : theregister port map (clk=>clk, d_in => next_pc, d_out => current_pc, rst=>rst);
+PC : theregister port map (clk=>quarter_clk, d_in => IF_PC_OUT, d_out => IF_PC_IN, rst=>rst);
 --==============================================================================
 
 -- Start of the pipeline
 --==============================================================================
 -- Instruction Fetch
-
---I_FETCH :     InstructionFetcher port map(M_INSTR=>RAM_FROM_B, clk=>half_clk, double_clk=>clk, INSTR=>IF_INSTR, M_ADDR=>RAM_ADDR_B);
 IF_INSTR <= DEBUG_INSTR_IN;
+I_FETCH :     InstructionFetcher port map(M_INSTR=>RAM_FROM_B, clk=>half_clk, INSTR=>IF_INSTR, M_ADDR=>RAM_ADDR_B, 
+                                          rst=>rst, pc_in=>IF_PC_IN, pc_out=>IF_PC_OUT, br_instr => IF_BR_INSTR,
+                                          br_pc => IF_BR_PC);
+                                          
 R_IFID  :     theregister        port map(clk=>quarter_clk, rst=>rst, d_in=>IF_INSTR, d_out=>ID_INSTR); -- IF/ID stage register
 
 --==============================================================================
