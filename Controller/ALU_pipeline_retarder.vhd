@@ -23,7 +23,7 @@ entity ALUPipelineRetarder is
   Port (
     clk, rst : in std_logic;
     ID_OPCODE : in std_logic_vector(6 downto 0); -- Check the opcode incoming to the ALU
-    alu_stall_enable : inout std_logic := '0'-- inout used to feedback internally
+    alu_stall_enable : inout std_logic
    );
 end ALUPipelineRetarder;
 
@@ -37,12 +37,13 @@ process(clk, rst) begin
     if rst = '1' then
         alu_stall_enable <= '0';
     elsif rising_edge(clk) then
+    assert false report "Debug: ALU retarder detected clock" severity note;
         if counter > 0 then
          counter <= counter - 1;
-        elsif counter = 0 then
+        elsif counter = 0 and alu_stall_enable = '1' then
             alu_stall_enable <= '0';
         else
-            
+            assert false report "Debug: ALU retarder not currently stalling" severity note;
              case ID_OPCODE is 
          
              when "0000000" | "0000100" | "0000111" | "0100000" | "0100001"=>                    --NOP, NAND, TEST, OUT, IN
@@ -53,12 +54,12 @@ process(clk, rst) begin
 --                alu_stall_enable <= '1';
                     null;        
              when "0000101" | "0000110" =>  -- SHR, SHL
-             
-                counter <= 1;
+                assert false report "Debug: ALU retarder detected shift" severity note; 
+                counter <= 3;
                 alu_stall_enable <= '1';
              when "0000011" =>                    --MULT op
             
-                counter <= 1;
+                counter <= 3;
                 alu_stall_enable <= '1';
              when "UUUUUUU" | "XXXXXXX" =>
                  assert false report "Uninitialized opcode" severity note;              

@@ -21,7 +21,8 @@ entity controller is
         data_mem_sel : out STD_LOGIC; -- 1 when reading from data memory, 0 when passing AR from ALU/writing to memory
         instr_mem_sel : out STD_LOGIC; -- 1 when using RAM, 0 when using ROM
         io_sel : out STD_LOGIC; -- 1 when using IO, 0 when using memory
-        ram_ena, ram_enb, we : out std_logic 
+        ram_ena, ram_enb, we : out std_logic; 
+        MEMWB_CONTROL_BITS_OUT : in std_logic_vector(15 downto 0)
     );
 end controller;
 
@@ -101,7 +102,7 @@ process(clk, rst) begin
     end if;
 end process;
 
-process(pipe_clk) begin
+process(MEMWB_CONTROL_BITS_OUT) begin
     written <= '0';
 end process;
 

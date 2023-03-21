@@ -20,7 +20,8 @@ port(
     rd_1,               -- Address of register of first operand
     rd_2,               -- Address of register of second operand
     ra              : out std_logic_vector(2 downto 0);
-    imm             : out std_logic_vector(3 downto 0)
+    imm             : out std_logic_vector(3 downto 0);
+    bubble          : in std_logic
     );
 end InstructionDecoder;
 
@@ -30,7 +31,7 @@ signal opcode : std_logic_vector(6 downto 0);
 
 begin
 
-    opcode <= instruction(15 downto 9);
+    opcode <= instruction(15 downto 9) when bubble = '0' else "0000000";
     opcode_out <= opcode;
     
     process(opcode)

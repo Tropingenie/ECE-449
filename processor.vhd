@@ -37,7 +37,8 @@ port(
     data_mem_sel : out STD_LOGIC; -- 1 when reading from data memory, 0 when passing AR from ALU/writing to memory
     instr_mem_sel : out STD_LOGIC; -- 1 when using RAM, 0 when using ROM
     io_sel : out STD_LOGIC; -- 1 when using IO, 0 when using memory
-    ram_ena, ram_enb, we : out std_logic 
+    ram_ena, ram_enb, we : out std_logic;
+    MEMWB_CONTROL_BITS_OUT : in std_logic_vector(15 downto 0) 
 );
 end component;
 
@@ -50,9 +51,8 @@ end component;
 
 component InstructionFetcher is
 port(
-    M_INSTR : in std_logic_vector(15 downto 0); -- Input from memory
     clk, rst, bubble : in std_logic; -- clock at twice the rate of the datapath, PC gets double clk to strobe properly
-    INSTR, PC : out std_logic_vector(15 downto 0) -- Instruction output and memory address issuing respectively
+    PC : out std_logic_vector(15 downto 0) -- Instruction output and memory address issuing respectively
 );
 end component;
 
@@ -61,7 +61,8 @@ port(
     instruction     : in std_logic_vector(15 downto 0);
     opcode_out      : out std_logic_vector(6 downto 0);
     rd_1, rd_2, ra  : out std_logic_vector(2 downto 0);
-    imm             : out std_logic_vector(3 downto 0)
+    imm             : out std_logic_vector(3 downto 0);
+    bubble          : in std_logic
 );
 end component;
 
@@ -130,7 +131,7 @@ MAINCONT    :   controller port map(clk=>clk, pipe_clk=>EXMEM_clk, rst=>rst, ID_
                                     MEM_opcode=>MEM_opcode, WB_opcode=>WB_opcode, ID_WRITE_EN=>ID_WRITE_EN,
                                     stall_en=>stall_en, bubble=>bubble, data_mem_sel=>data_mem_sel, 
                                     instr_mem_sel=>instr_mem_sel, io_sel=>io_sel, ram_ena=>ram_ena,
-                                    ram_enb=>ram_enb, we=>ram_we);
+                                    ram_enb=>ram_enb, we=>ram_we, MEMWB_CONTROL_BITS_OUT=>MEMWB_CONTROL_BITS_OUT);
                                    
 
 -- -- Stalls according to the set bit position 0=IFID, 1=IDEX, 2=EXMEM, 3=MEMWB                                    
@@ -146,14 +147,14 @@ MEMWB_clk <= clk when stall_en(3) = '0' else '0';
 --==============================================================================
 -- Instruction Fetch
 
-I_FETCH :     InstructionFetcher port map(M_INSTR=>RAM_FROM_B, clk=>IFID_clk, rst=>rst, bubble=>bubble, INSTR=>IF_INSTR, PC=>RAM_ADDR_B);
---IF_INSTR <= DEBUG_INSTR_IN;
+I_FETCH :     InstructionFetcher port map(clk=>IFID_clk, rst=>rst, bubble=>bubble, PC=>RAM_ADDR_B);
+IF_INSTR <= RAM_FROM_B;
 R_IFID  :     theregister        port map(clk=>IFID_clk, rst=>rst, d_in=>IF_INSTR, d_out=>ID_INSTR); -- IF/ID stage register
 
 --==============================================================================
 -- Instruction Decode
 
-I_DECODE:     InstructionDecoder port map(instruction=>ID_INSTR, opcode_out=>ID_opcode, 
+I_DECODE:     InstructionDecoder port map(instruction=>ID_INSTR, opcode_out=>ID_opcode, bubble=>bubble, 
                                           rd_1=>ID_rb, rd_2=>ID_rc, ra=>ID_ra, imm=>ID_imm);
 
 REG_FILE:     register_file      port map(clk=>clk, rst=>rst, rd_index1=>ID_rb, 
