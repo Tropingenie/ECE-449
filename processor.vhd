@@ -29,7 +29,7 @@ architecture Behaviour of processor is
 
 component controller is
 port(
-    clk, rst : in std_logic;
+    clk, pipe_clk, rst : in std_logic;
     ID_opcode, EX_opcode, MEM_opcode, WB_opcode : in std_logic_vector(6 downto 0);
     ID_WRITE_EN : inout std_logic; -- Enable writing to the register. INOUT used so we can feedback into the controller internally
     stall_en : out std_logic_vector(3 downto 0); -- Stalls according to the set bit position 0=IFID, 1=IDEX, 2=EXMEM, 3=MEMWB
@@ -126,7 +126,7 @@ begin
 
 -- Controller
 
-MAINCONT    :   controller port map(clk=>clk, rst=>rst, ID_opcode=>ID_opcode, EX_opcode=>EX_opcode, 
+MAINCONT    :   controller port map(clk=>clk, pipe_clk=>EXMEM_clk, rst=>rst, ID_opcode=>ID_opcode, EX_opcode=>EX_opcode, 
                                     MEM_opcode=>MEM_opcode, WB_opcode=>WB_opcode, ID_WRITE_EN=>ID_WRITE_EN,
                                     stall_en=>stall_en, bubble=>bubble, data_mem_sel=>data_mem_sel, 
                                     instr_mem_sel=>instr_mem_sel, io_sel=>io_sel, ram_ena=>ram_ena,

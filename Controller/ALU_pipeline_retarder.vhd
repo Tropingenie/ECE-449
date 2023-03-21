@@ -39,23 +39,26 @@ process(clk, rst) begin
     elsif rising_edge(clk) then
         if counter > 0 then
          counter <= counter - 1;
-        else
+        elsif counter = 0 then
             alu_stall_enable <= '0';
+        else
+            
              case ID_OPCODE is 
          
              when "0000000" | "0000100" | "0000111" | "0100000" | "0100001"=>                    --NOP, NAND, TEST, OUT, IN
              -- 1 clock (no delay)
              null;       
              when "0000001" | "0000010" =>                    --ADD, SUB op
-                counter <= 0;
-                alu_stall_enable <= '1';        
+--                counter <= 0;
+--                alu_stall_enable <= '1';
+                    null;        
              when "0000101" | "0000110" =>  -- SHR, SHL
              
-                counter <= 2;
+                counter <= 1;
                 alu_stall_enable <= '1';
              when "0000011" =>                    --MULT op
             
-                counter <= 2;
+                counter <= 1;
                 alu_stall_enable <= '1';
              when "UUUUUUU" | "XXXXXXX" =>
                  assert false report "Uninitialized opcode" severity note;              
