@@ -30,7 +30,7 @@ port(
     INSTR, M_ADDR : out std_logic_vector(15 downto 0); -- Instruction output and memory address issuing respectively
     
     --Branch Output Signals
-    BR_INST : out std_logic_vector(6 downto 0);        -- Branch instruction opcode value
+    BR_INSTR : out std_logic_vector(15 downto 0);      -- Branch instruction opcode value
     BR_PC   : out std_logic_vector(15 downto 0)        -- Branch instruction PC value
 );
 end InstructionFetcher;
@@ -38,8 +38,6 @@ end InstructionFetcher;
 architecture Behaviour of InstructionFetcher is
 
 signal old_pc, new_pc : std_logic_vector(15 downto 0);
-signal branch_instr_op : std_logic_vector(6 downto 0);
-signal shift_amt : integer;
 
 begin
 
@@ -58,7 +56,7 @@ begin
             new_pc <= std_logic_vector(unsigned(old_pc) + x"0002"); 
     
             if M_INSTR(15) = '1' then                                -- Check for branch op in current instr on rising clock
-               BR_INST <= M_INSTR(15 downto 9);
+               BR_INSTR <= M_INSTR(15 downto 0);
                BR_PC   <= new_pc;
             end if;
             
