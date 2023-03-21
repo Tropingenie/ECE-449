@@ -1,15 +1,4 @@
-----------------------------------------------------------------------------------
--- Engineer: Kai Herrero, benjamin Lyne
--- 
--- Create Date: 03/01/2023 02:01:10 PM
--- Design Name: Format A Instuctions Testbench 
--- Module Name: Processor_testbench - Behavioral
--- Project Name: ECE 458 16 bit processor
--- Target Devices: processor
--- Description: Testbench uses the format A assembly test and simulates
--- the pipeline with instruction.
--- 
-----------------------------------------------------------------------------------
+
 
 
 library IEEE;
