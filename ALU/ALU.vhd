@@ -57,15 +57,16 @@ begin
             when "0000000" =>                    --NOP
                 data3 <= (others => '0');        
                 
-            when "0000001" =>                    --ADD op (rare case of ADD overflow not consisdered
+            when "0000001" =>                    --ADD op (OVERFLOW NOT CONSIDERED)
                 if (data2 + data1) = 0 then
                     data3 <= data1 + data2;
-                    o_flag <= '1';
+                    z_flag <= '1';
                 else
                     if to_integer(signed(data3)) < 0 then --check for negative result from an ADD
                         n_flag <= '1';
                     else
                         n_flag <= '0';
+                        z_flag <= '0';
                     end if;
                     
                     data3 <= data1 + data2;
@@ -73,28 +74,34 @@ begin
                                        
                 end if;
                 
-            when "0000010" =>                    --SUB op
+            when "0000010" =>                    --SUB op (UNDEFLOW NOT CONSIDERED)
                 if( to_integer(signed(data2)) > to_integer(signed(data1)) ) then
                     n_flag <= '1';
                 elsif( to_integer(signed(data1)) - to_integer(signed(data2)) = 0 ) then
-                    o_flag <= '1';
+                    z_flag <= '1';
                 else
                     data3 <= data1 - data2;
+                    n_flag <= '0';
+                    z_flag <= '0';
                     
                 end if;                   
                 
-            when "0000011" =>                    --MULT op
+            when "0000011" =>                    --MULT op (No negative operands)
                 if( (to_integer(signed(data1))) * (to_integer(signed(data2))) > integer(65536)) then
                     o_flag <= '1';
                 elsif( to_integer(signed(data1)) * to_integer(signed(data2)) = 0) then
                     z_flag <= '1';
+                    data3 <= X"00";
                 elsif (to_integer(signed(data1)) < 0)then
                     n_flag <= '1';
                 elsif (to_integer(signed(data2)) < 0) then
                     n_flag <= '1';
                 else
                     mult_ofr <= data1 * data2;
-                    data3 <= mult_ofr(15 downto 0);                     
+                    data3 <= mult_ofr(15 downto 0);
+                    n_flag <= '0';
+                    z_flag <= '0';
+                    o_flag <= '0';                    
                 end if;
               
             when "0000100" =>                    --NAND op
@@ -113,6 +120,9 @@ begin
                     z_flag <= '1';
                 elsif data1(15) = '1' then
                     n_flag <= '1';
+                else
+                    z_flag <= '0';
+                    n_flag <= '0';
                 end if;
 
             when "0100000" =>                    --OUT Op
