@@ -18,7 +18,7 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity InstructionFetcher is
 port(
-    clk, rst, bubble : in std_logic;
+    clk, rst : in std_logic;
     PC : out std_logic_vector(15 downto 0) -- Instruction output and memory address issuing respectively
 );
 end InstructionFetcher;
@@ -42,11 +42,11 @@ begin
         if rst = '1' or next_pc = "UUUU" then
             PC <= (others=>'0');
         elsif RISING_EDGE(clk) then
-            if bubble = '1' then
+            --if bubble = '1' then
                 next_pc <= current_pc;
-            else
+            --else
                 next_pc <= std_logic_vector(unsigned(current_pc) + x"0002");
-            end if;
+            --end if;
             PC <= current_pc;
         end if;
     end process;

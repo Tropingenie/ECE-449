@@ -33,12 +33,13 @@ port(
     ID_opcode, EX_opcode, MEM_opcode, WB_opcode : in std_logic_vector(6 downto 0);
     ID_WRITE_EN : inout std_logic; -- Enable writing to the register. INOUT used so we can feedback into the controller internally
     stall_en : out std_logic_vector(3 downto 0); -- Stalls according to the set bit position 0=IFID, 1=IDEX, 2=EXMEM, 3=MEMWB
-    bubble : out std_logic; -- Tells the pipeline to introduce a bubble
+    --bubble : out std_logic; -- Tells the pipeline to introduce a bubble
     data_mem_sel : out STD_LOGIC; -- 1 when reading from data memory, 0 when passing AR from ALU/writing to memory
     instr_mem_sel : out STD_LOGIC; -- 1 when using RAM, 0 when using ROM
     io_sel : out STD_LOGIC; -- 1 when using IO, 0 when using memory
-    ram_ena, ram_enb, we : out std_logic;
-    MEMWB_CONTROL_BITS_OUT : in std_logic_vector(15 downto 0) 
+    ram_ena, ram_enb, we : out std_logic; 
+    MEMWB_CONTROL_BITS_OUT : in std_logic_vector(15 downto 0);
+    ID_rd_1, ID_rd_2, ID_wr, WB_wr  : in std_logic_vector(2 downto 0)
 );
 end component;
 
@@ -51,7 +52,7 @@ end component;
 
 component InstructionFetcher is
 port(
-    clk, rst, bubble : in std_logic; -- clock at twice the rate of the datapath, PC gets double clk to strobe properly
+    clk, rst : in std_logic; -- clock at twice the rate of the datapath, PC gets double clk to strobe properly
     PC : out std_logic_vector(15 downto 0) -- Instruction output and memory address issuing respectively
 );
 end component;
@@ -61,8 +62,7 @@ port(
     instruction     : in std_logic_vector(15 downto 0);
     opcode_out      : out std_logic_vector(6 downto 0);
     rd_1, rd_2, ra  : out std_logic_vector(2 downto 0);
-    imm             : out std_logic_vector(3 downto 0);
-    bubble          : in std_logic
+    imm             : out std_logic_vector(3 downto 0)
 );
 end component;
 
@@ -120,7 +120,7 @@ signal EX_Flags, MEM_Flags, WB_Flags    : std_logic_vector(2 downto 0); -- ALU f
 signal MEM_WB_DATA, MEM_DATA            : std_logic_vector(15 downto 0); -- Intermediate signals for MEM stage to select what to pass to WB
 signal MEM_OPCODE_VAL                   : unsigned(15 downto 0); -- For comparison using <, >, etc
 signal WB_DATA                          : std_logic_vector(15 downto 0); -- Data to write back in WB stage
-signal bubble                           : std_logic; -- Signal to indicate to IF to introduce a bubble
+--signal bubble                           : std_logic; -- Signal to indicate to IF to introduce a bubble
 signal data_mem_sel, instr_mem_sel, io_sel : std_logic; -- Signals to control during memory access
 
 begin
@@ -129,9 +129,10 @@ begin
 
 MAINCONT    :   controller port map(clk=>clk, pipe_clk=>EXMEM_clk, rst=>rst, ID_opcode=>ID_opcode, EX_opcode=>EX_opcode, 
                                     MEM_opcode=>MEM_opcode, WB_opcode=>WB_opcode, ID_WRITE_EN=>ID_WRITE_EN,
-                                    stall_en=>stall_en, bubble=>bubble, data_mem_sel=>data_mem_sel, 
+                                    stall_en=>stall_en, data_mem_sel=>data_mem_sel, 
                                     instr_mem_sel=>instr_mem_sel, io_sel=>io_sel, ram_ena=>ram_ena,
-                                    ram_enb=>ram_enb, we=>ram_we, MEMWB_CONTROL_BITS_OUT=>MEMWB_CONTROL_BITS_OUT);
+                                    ram_enb=>ram_enb, we=>ram_we, MEMWB_CONTROL_BITS_OUT=>MEMWB_CONTROL_BITS_IN,
+                                    ID_rd_1=>ID_rb, ID_rd_2=>ID_rc, ID_wr=>ID_ra, WB_wr=>WB_ra);
                                    
 
 -- -- Stalls according to the set bit position 0=IFID, 1=IDEX, 2=EXMEM, 3=MEMWB                                    
@@ -147,14 +148,14 @@ MEMWB_clk <= clk when stall_en(3) = '0' else '0';
 --==============================================================================
 -- Instruction Fetch
 
-I_FETCH :     InstructionFetcher port map(clk=>IFID_clk, rst=>rst, bubble=>bubble, PC=>RAM_ADDR_B);
+I_FETCH :     InstructionFetcher port map(clk=>IFID_clk, rst=>rst, PC=>RAM_ADDR_B);
 IF_INSTR <= RAM_FROM_B;
 R_IFID  :     theregister        port map(clk=>IFID_clk, rst=>rst, d_in=>IF_INSTR, d_out=>ID_INSTR); -- IF/ID stage register
 
 --==============================================================================
 -- Instruction Decode
 
-I_DECODE:     InstructionDecoder port map(instruction=>ID_INSTR, opcode_out=>ID_opcode, bubble=>bubble, 
+I_DECODE:     InstructionDecoder port map(instruction=>ID_INSTR, opcode_out=>ID_opcode, 
                                           rd_1=>ID_rb, rd_2=>ID_rc, ra=>ID_ra, imm=>ID_imm);
 
 REG_FILE:     register_file      port map(clk=>clk, rst=>rst, rd_index1=>ID_rb, 

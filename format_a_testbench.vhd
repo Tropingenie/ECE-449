@@ -50,41 +50,52 @@ begin
 
     process begin   --Clocking process, 500MhZ duty cycle
     clk <= '0';
-    wait for 10 us;
+    wait for 1 us;
     clk <= '1';
-    wait for 10 us;
+    wait for 1 us;
     end process;
     
     process(clk) begin
         case(RAM_ADDR_B) is
+        -- UNCOMMENT THE FOLLOWING FOR TESTING FORMAT A
             when x"0000" => RAM_FROM_B <= "0000000000000000"; -- IN r1 (NOP for now)
             when x"0002" => RAM_FROM_B <= "0000000000000000"; -- IN r2 (NOP for now)
---            when x"0004" => RAM_FROM_B <= "0000000000000000";
---           when  x"0006" => RAM_FROM_B <= "0000000000000000";
---            when x"0008" => RAM_FROM_B <= "0000000000000000";
---            when x"000A" => RAM_FROM_B <= "0000000000000000"; -- 4 NOPs
-            when x"0004" => RAM_FROM_B <= "0000001011010001"; --ADD r3,r2,r1
---            when x"000E" => RAM_FROM_B <= "0000000000000000";
---           when  x"0010" => RAM_FROM_B <= "0000000000000000";
---           when  x"0012" => RAM_FROM_B <= "0000000000000000";
---          when   x"0014" => RAM_FROM_B <= "0000000000000000"; -- 4 NOPs
-           when  x"0006" => RAM_FROM_B <= "0000101011000010"; --SHL r3,2
---        when     x"0018" => RAM_FROM_B <= "0000000000000000";
---         when    x"001A" => RAM_FROM_B <= "0000000000000000";
---          when   x"001C" => RAM_FROM_B <= "0000000000000000";
---           when  x"001E" => RAM_FROM_B <= "0000000000000000"; -- 4 NOPs
-         when    x"0008" => RAM_FROM_B <= "0000011010001011"; --MUL r2,r1,r3
---          when   x"0022" => RAM_FROM_B <= "0000000000000000";
---          when   x"0024" => RAM_FROM_B <= "0000000000000000";
---         when    x"0026" => RAM_FROM_B <= "0000000000000000";
---         when    x"0028" => RAM_FROM_B <= "0000000000000000"; -- 4 NOPs
-          when   x"000A" => RAM_FROM_B <= "0100000010000000"; --OUT r2
---         when    x"002C" => RAM_FROM_B <= "0000000000000000";
---           when  x"002E" => RAM_FROM_B <= "0000000000000000";
---          when   x"0030" => RAM_FROM_B <= "0000000000000000";
---          when   x"0032" => RAM_FROM_B <= "0000000000000000"; -- 4 NOPs
-          when others =>
-            assert false report "Testbench memory out of range" severity note;
+            when x"0004" => RAM_FROM_B <= "0000000000000000";
+            when x"0006" => RAM_FROM_B <= "0000000000000000";
+            when x"0008" => RAM_FROM_B <= "0000000000000000";
+            when x"000A" => RAM_FROM_B <= "0000000000000000"; -- 4 NOPs
+            when x"000C" => RAM_FROM_B <= "0000001011010001"; --ADD r3,r2,r1
+            when x"000E" => RAM_FROM_B <= "0000000000000000";
+            when x"0010" => RAM_FROM_B <= "0000000000000000";
+            when x"0012" => RAM_FROM_B <= "0000000000000000";
+            when x"0014" => RAM_FROM_B <= "0000000000000000"; -- 4 NOPs
+            when x"0016" => RAM_FROM_B <= "0000101011000010"; --SHL r3,2
+            when x"0018" => RAM_FROM_B <= "0000000000000000";
+            when x"001A" => RAM_FROM_B <= "0000000000000000";
+            when x"001C" => RAM_FROM_B <= "0000000000000000";
+            when x"001E" => RAM_FROM_B <= "0000000000000000"; -- 4 NOPs
+            when x"0020" => RAM_FROM_B <= "0000011010001011"; --MUL r2,r1,r3
+            when x"0022" => RAM_FROM_B <= "0000000000000000";
+            when x"0024" => RAM_FROM_B <= "0000000000000000";
+            when x"0026" => RAM_FROM_B <= "0000000000000000";
+            when x"0028" => RAM_FROM_B <= "0000000000000000"; -- 4 NOPs
+            when x"002A" => RAM_FROM_B <= "0100000010000000"; --OUT r2
+            when x"002C" => RAM_FROM_B <= "0000000000000000";
+            when x"002E" => RAM_FROM_B <= "0000000000000000";
+            when x"0030" => RAM_FROM_B <= "0000000000000000";
+            when x"0032" => RAM_FROM_B <= "0000000000000000"; -- 4 NOPs
+        
+        
+        -- UNCOMMENT THE FOLLOWING FOR TESTING DATA HAZARDS
+--            when x"0000" => RAM_FROM_B <= "0000000000000000"; -- IN r1 (NOP for now)
+--            when x"0002" => RAM_FROM_B <= "0000000000000000"; -- IN r2 (NOP for now)
+--            when x"0004" => RAM_FROM_B <= "0000001011010001"; --ADD r3,r2,r1
+--            when x"0006" => RAM_FROM_B <= "0000101011000010"; --SHL r3,2
+--            when x"0008" => RAM_FROM_B <= "0000011010001011"; --MUL r2,r1,r3
+--            when x"000A" => RAM_FROM_B <= "0100000010000000"; --OUT r2
+            
+          -- Leave this :)
+            when others => assert false report "Testbench memory out of range" severity note;
         end case;
     end process;
     

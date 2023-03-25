@@ -2,8 +2,7 @@
 --
 -- Register Arbitrator
 --
--- Decides whether to send a bubble or the instrucion based
--- on whether a register is being written back to.
+-- Stalls the pipeline on data hazards.
 --
 -- Engineer: Kai Herrero, Benjamin Lyne
 --
@@ -15,44 +14,58 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity RegisterArbitrator is
 port(
-    ID_opcode       : in std_logic_vector(6 downto 0);
-    clk, rst, stall_IFID : in std_logic;                     
-    bubble          : out std_logic                   
-);
+    ID_opcode, WB_opcode            : in std_logic_vector(6 downto 0);
+    ID_rd_1, ID_rd_2, ID_wr, WB_wr  : in std_logic_vector(2 downto 0);
+    clk, rst, stall_IFID            : in std_logic;
+    stall_IDEX                      : out std_logic
+    );
 end RegisterArbitrator;
 
 architecture Behavioral of RegisterArbitrator is
 
 --SIGNAL DECLARATIONS HERE--
-signal send_bubble : std_logic := '0';
-signal bubbles_to_send : integer := 0;
+    type reg_array is array (integer range 0 to 7) of std_logic;
+    signal reg_checkout : reg_array;
+    signal read_1, read_2, ID_write, WB_write : integer;
 
 begin
-    bubble <= send_bubble;
+    read_1   <= to_integer(unsigned(ID_rd_1));
+    read_2   <= to_integer(unsigned(ID_rd_2));
+    ID_write <= to_integer(unsigned(id_wr));
+    WB_write <= to_integer(unsigned(wb_wr));
+    
 
     process(clk, rst)
     begin
         if rst = '1' then
-            send_bubble <= '0';
+            for i in 0 to 7 loop
+                reg_checkout(i)<= '0';
+            end loop;
+           stall_IDEX <= '0'; 
         end if;
         if(RISING_EDGE(clk)) then
-        case(ID_opcode) is
-            when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110" | "0100000"=> -- Format A that use registers
-                if send_bubble = '0' then
-                    bubbles_to_send <= bubbles_to_send + 2;
-                end if;
-                
-            when others =>
-                null;
-          end case;  
-          if stall_IFID = '1' then
-                null;
-          elsif bubbles_to_send > 0 then
-            send_bubble <= '1';
-            bubbles_to_send <= bubbles_to_send - 1;
-          else
-                send_bubble <= '0';
-          end if;
+            
+            -- Stall pipeline when trying to read from a checked out register, and check out the writeback register when proceeding
+            case(ID_opcode) is
+                when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110" | "0100000"=> -- Format A that use registers
+                    if reg_checkout(read_1) = '1' or reg_checkout(read_2) = '1' then
+                        stall_IDEX <= '1';
+                    else
+                        reg_checkout(ID_write) <= '1';
+                        stall_IDEX <= '0';
+                    end if; 
+                when others =>
+                    null;
+              end case; 
+            
+            -- Check registers back in
+            case(WB_opcode) is
+                  when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110" | "0100000"=> -- Format A that use registers
+                      reg_checkout(WB_write) <= '0';
+                  when others =>
+                      null;
+                end case;   
+
       end if;
     end process;
 end Behavioral;

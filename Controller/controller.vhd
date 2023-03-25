@@ -17,12 +17,13 @@ entity controller is
         ID_opcode, EX_opcode, MEM_opcode, WB_opcode : in std_logic_vector(6 downto 0);
         ID_WRITE_EN : inout std_logic; -- Enable writing to the register. INOUT used so we can feedback into the controller internally
         stall_en : out std_logic_vector(3 downto 0); -- Stalls according to the set bit position 0=IFID, 1=IDEX, 2=EXMEM, 3=MEMWB
-        bubble : out std_logic; -- Tells the pipeline to introduce a bubble
+        --bubble : out std_logic; -- Tells the pipeline to introduce a bubble
         data_mem_sel : out STD_LOGIC; -- 1 when reading from data memory, 0 when passing AR from ALU/writing to memory
         instr_mem_sel : out STD_LOGIC; -- 1 when using RAM, 0 when using ROM
         io_sel : out STD_LOGIC; -- 1 when using IO, 0 when using memory
         ram_ena, ram_enb, we : out std_logic; 
-        MEMWB_CONTROL_BITS_OUT : in std_logic_vector(15 downto 0)
+        MEMWB_CONTROL_BITS_OUT : in std_logic_vector(15 downto 0);
+        ID_rd_1, ID_rd_2, ID_wr, WB_wr  : in std_logic_vector(2 downto 0)
     );
 end controller;
 
@@ -30,9 +31,10 @@ architecture Behaviour of controller is
 
 component RegisterArbitrator is
 port(
-    ID_opcode       : in std_logic_vector(6 downto 0);
-    clk, rst, stall_IFID : in std_logic;                     
-    bubble          : out std_logic := '0'                                       
+    ID_opcode, WB_opcode            : in std_logic_vector(6 downto 0);
+    ID_rd_1, ID_rd_2, ID_wr, WB_wr  : in std_logic_vector(2 downto 0);
+    clk, rst, stall_IFID            : in std_logic;
+    stall_IDEX                      : out std_logic                                  
 );
 end component;
 
@@ -62,11 +64,13 @@ component MemoryArbiter is
 end component;
 
 signal stall_stage : std_logic_vector(3 downto 0) := (others => '0');
-signal ALU_STALL, written : std_logic;
+signal ALU_STALL, REG_STALL, written : std_logic := '0';
+signal last_wb_bits, delay_wb_bits, current_wb_bits : std_logic_vector(15 downto 0);
 
 begin
 
-REG_ARB     :  RegisterArbitrator port map(ID_opcode=>ID_opcode, clk=>clk, rst=>rst, bubble=>bubble, stall_IFID=>stall_stage(0)); -- Introduces bubbles when register conflcit occurs
+REG_ARB     :  RegisterArbitrator port map(ID_opcode=>ID_opcode, WB_opcode=>WB_opcode, id_rd_1=>id_rd_1, id_rd_2=>id_rd_2, id_wr=>id_wr, wb_wr=>wb_wr,
+                                           clk=>clk, rst=>rst, stall_IFID=>stall_stage(0), stall_IDEX=>REG_STALL); 
                                           
 STALL_CONT :  StallController port map(stall_stage=>stall_stage, stall_enable=>stall_en); -- Stall pipeline if necessary
 
@@ -81,29 +85,33 @@ process(clk, rst) begin
         stall_stage <= (others => '0');
     elsif (rising_edge(clk)) then
         -- Writeback stalling
-        -- ======= DEPRECATED. ALTERNATE METHOD FOR HANDLING DATA HAZARD IS WIP
-        -- stall_stage(1) <= ID_WRITE_EN;
+         stall_stage(1) <= REG_STALL;
         
         --stall the pipeline on longer ALU operations
         stall_stage(2) <= ALU_STALL;
         
         --Enable writeback for one clock
+        last_wb_bits <= delay_wb_bits;
+        delay_wb_bits <= current_wb_bits; -- Need an extra clock delay so that there is a clock edge where last and current differ
+        current_wb_bits <= MEMWB_CONTROL_BITS_OUT;
+        
         case(WB_OPCODE) is
-            when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110" | "0100000" => -- Format A that use registers
-                if written <= '0' then
+            when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110" | "0100001" => -- Format A that write to registers
+                if last_wb_bits = current_wb_bits then
+                    ID_WRITE_EN <= '0';
+                    written <= '1';
+                elsif written <= '0' then
                     ID_WRITE_EN <= '1';
                     written <= '1';
                 else
                     ID_WRITE_EN <= '0';
+                    written <= '0';
                 end if;
             when others =>
                 ID_WRITE_EN <= '0';
+                written <= '0';
         end case;
     end if;
-end process;
-
-process(MEMWB_CONTROL_BITS_OUT) begin
-    written <= '0';
 end process;
 
 --    with WB_OPCODE select ID_WRITE_EN <=
