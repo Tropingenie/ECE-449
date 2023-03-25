@@ -60,7 +60,7 @@ begin
             
             -- Check registers back in
             case(WB_opcode) is
-                  when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110" | "0100000"=> -- Format A that use registers
+                  when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110" | "0100001"=> -- Format A that use registers
                       reg_checkout(WB_write) <= '0';
                   when others =>
                       null;

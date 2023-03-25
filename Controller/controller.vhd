@@ -72,7 +72,7 @@ begin
 REG_ARB     :  RegisterArbitrator port map(ID_opcode=>ID_opcode, WB_opcode=>WB_opcode, id_rd_1=>id_rd_1, id_rd_2=>id_rd_2, id_wr=>id_wr, wb_wr=>wb_wr,
                                            clk=>clk, rst=>rst, stall_IFID=>stall_stage(0), stall_IDEX=>REG_STALL); 
                                           
-STALL_CONT :  StallController port map(stall_stage=>stall_stage, stall_enable=>stall_en); -- Stall pipeline if necessary
+--STALL_CONT :  StallController port map(stall_stage=>stall_stage, stall_enable=>stall_en); -- Stall pipeline if necessary
 
 ALUPR : ALUPipelineRetarder port map(clk=>clk, rst=>rst, ID_OPCODE=>ID_OPCODE, alu_stall_enable=>ALU_STALL);
 
@@ -80,15 +80,18 @@ MEM_ARB : MemoryArbiter port map(mem_opcode=>mem_opcode, data_mem_sel=>data_mem_
                                  instr_mem_sel=>instr_mem_sel, io_sel=>io_sel, ram_ena=>ram_ena, 
                                  ram_enb=>ram_enb, we=>we);
 
+-- Writeback stalling
+ stall_stage(1) <= REG_STALL;
+
+--stall the pipeline on longer ALU operations
+stall_stage(2) <= ALU_STALL;
+
+stall_en <= '0' & ALU_STALL & (REG_STALL or ALU_STALL) & (REG_STALL or ALU_STALL);
+
 process(clk, rst) begin
     if rst = '1' then
         stall_stage <= (others => '0');
     elsif (rising_edge(clk)) then
-        -- Writeback stalling
-         stall_stage(1) <= REG_STALL;
-        
-        --stall the pipeline on longer ALU operations
-        stall_stage(2) <= ALU_STALL;
         
         --Enable writeback for one clock
         last_wb_bits <= delay_wb_bits;
