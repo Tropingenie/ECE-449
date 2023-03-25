@@ -118,6 +118,7 @@ begin
         when "1000100" =>
         when "1000101" =>
         when "1000110" =>
+            
         when "1000111" =>
             next_pc <= reg_data_in;         
         when others =>
