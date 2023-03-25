@@ -22,7 +22,6 @@ port(
     rd_1,               -- Address of register of first operand
     rd_2,               -- Address of register of second operand
     ra              : out std_logic_vector(2 downto 0);
-    n_flag, z_flag  : in std_logic; --negative and zero flags for branch instructions
     imm             : out std_logic_vector(3 downto 0)
     );
 end InstructionDecoder;

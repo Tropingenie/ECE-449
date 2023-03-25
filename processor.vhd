@@ -11,7 +11,6 @@
 
 library IEEE;
 Library xpm;
-use xpm.vcomponents.all;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
@@ -50,12 +49,12 @@ end component;
 
 component InstructionFetcher is
 port(
-    clk, rst        : in std_logic;                           
+    clk, rst, bubble: in std_logic;                           
     PC_IN           : in std_logic_vector(15 downto 0);         
     PC_OUT          : out std_logic_vector(15 downto 0);        
     M_INSTR         : in std_logic_vector(15 downto 0);        
     INSTR, M_ADDR   : out std_logic_vector(15 downto 0); 
-    BR_INSTR        : out std_logic_vector(6 downto 0);        
+    BR_INSTR        : out std_logic_vector(15 downto 0);        
     BR_PC           : out std_logic_vector(15 downto 0)        
 );
 end component;
@@ -63,6 +62,7 @@ end component;
 component InstructionDecoder is
 port(
     instruction     : in std_logic_vector(15 downto 0);
+    br_instr_out    : out std_logic_vector(15 downto 0);
     opcode_out      : out std_logic_vector(6 downto 0);
     rd_1, rd_2, ra  : out std_logic_vector(2 downto 0);
     imm             : out std_logic_vector(3 downto 0)
@@ -79,15 +79,6 @@ port(
     wr_index: in std_logic_vector(2 downto 0);
     wr_data: in std_logic_vector(15 downto 0);
     wr_enable: in std_logic);
-end component;
-
-component RegisterArbitrator is
-port(
-    opcode_in   : in std_logic_vector(6 downto 0);  -- opcode of the "current" instruction
-    opcode_back : in std_logic_vector(6 downto 0);  -- opcode of the "writing back" instruction
-    clk         : in std_logic;                     -- Clock at twice the rate of the datapath
-    wr_en       : out std_logic                    -- Write enable for writeback
-);
 end component;
 
 component ALU is
@@ -159,7 +150,7 @@ MEMWB_clk <= clk when stall_en(3) = '0' else '0';
 
 --PC Register
 --==============================================================================
-PC : theregister port map (clk=>quarter_clk, d_in => IF_PC_OUT, d_out => IF_PC_IN, rst=>rst);
+PC : theregister port map (clk=>IFID_CLK, d_in => IF_PC_OUT, d_out => IF_PC_IN, rst=>rst);
 --==============================================================================
 
 -- Start of the pipeline
@@ -167,17 +158,16 @@ PC : theregister port map (clk=>quarter_clk, d_in => IF_PC_OUT, d_out => IF_PC_I
 -- Instruction Fetch
 
 --IF_INSTR <= DEBUG_INSTR_IN;
-I_FETCH :     InstructionFetcher port map(M_INSTR=>RAM_FROM_B, clk=>half_clk, INSTR=>IF_INSTR, M_ADDR=>RAM_ADDR_B, 
+I_FETCH :     InstructionFetcher port map(M_INSTR=>RAM_FROM_B, clk=>IFID_CLK, INSTR=>IF_INSTR, M_ADDR=>RAM_ADDR_B, 
                                           rst=>rst, pc_in=>IF_PC_IN, pc_out=>IF_PC_OUT, br_instr => IF_BR_INSTR,
-                                          br_pc => IF_BR_PC);
+                                          br_pc => IF_BR_PC, bubble=>bubble);
 R_IFID  :     theregister        port map(clk=>IFID_clk, rst=>rst, d_in=>IF_INSTR, d_out=>ID_INSTR); -- IF/ID stage register                                       
 --==============================================================================
 -- Instruction Decode
 
 I_DECODE:     InstructionDecoder port map(instruction=>ID_INSTR, opcode_out=>ID_opcode, 
                                           rd_1=>ID_rb, rd_2=>ID_rc, ra=>ID_ra, imm=>ID_imm);
-REG_ARB :     RegisterArbitrator port map(opcode_in=>ID_opcode, opcode_back=>WB_opcode, 
-                                          clk=>clk, wr_en=>ID_WRITE_EN); -- Register Arbitrator                                       
+                                     
 REG_FILE:     register_file      port map(clk=>clk, rst=>rst, rd_index1=>ID_rb, 
                                           rd_index2=>ID_rsel, rd_data1=>ID_data1, 
                                           rd_data2=>ID_RC_DATA, wr_index=>WB_ra, 

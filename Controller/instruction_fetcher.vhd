@@ -8,7 +8,7 @@
 -- handshaking with instruction memory, and strobing data
 -- from instruction memory.
 --
--- Benjamin Lyne
+-- Benjamin Lyne, Kai Herrero
 --
 -----------------------------------------------------------
 

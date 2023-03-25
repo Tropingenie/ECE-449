@@ -91,7 +91,7 @@ begin
                     o_flag <= '1';
                 elsif( to_integer(signed(data1)) * to_integer(signed(data2)) = 0) then
                     z_flag <= '1';
-                    data3 <= X"00";
+                    data3 <= X"0000";
                 elsif (to_integer(signed(data1)) < 0)then
                     n_flag <= '1';
                 elsif (to_integer(signed(data2)) < 0) then
