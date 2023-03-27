@@ -43,8 +43,7 @@ begin
             end loop;
            stall_IDEX <= '0'; 
         end if;
-        if(RISING_EDGE(clk)) then
-            
+           
             -- Stall pipeline when trying to read from a checked out register, and check out the writeback register when proceeding
             case(ID_opcode) is
                 when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110" | "0100000"=> -- Format A that use registers
@@ -66,6 +65,5 @@ begin
                       null;
                 end case;   
 
-      end if;
     end process;
 end Behavioral;
