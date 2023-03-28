@@ -24,15 +24,21 @@ begin
         IN_PORT when '1',
         RAM_READA when others;
         
-    process(io_sel) begin
-        case io_sel is
-            when '1' =>
-                OUT_PORT <= AR;
-                RAM_WRITE <= (others => 'Z');
-            when others =>
-                OUT_PORT <= (others => 'Z');
-                RAM_WRITE <= AR;
-        end case;
-    end process;
+    with IO_SEL select OUT_PORT <=
+        AR when '1',
+        (others => 'Z') when others;
+    with IO_SEL select RAM_WRITE <=
+            (others => 'Z') when '1',
+            AR when others;
+--    process(io_sel) begin
+--        case io_sel is
+--            when '1' =>
+--                OUT_PORT <= AR;
+--                RAM_WRITE <= (others => 'Z');
+--            when others =>
+--                OUT_PORT <= (others => 'Z');
+--                RAM_WRITE <= AR;
+--        end case;
+--    end process;
 
 end Behaviour;
