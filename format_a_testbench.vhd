@@ -95,10 +95,10 @@ begin
 --            when x"000A" => RAM_FROM_B <= "0100000010000000"; --OUT r2
             
         -- UNCOMMENT THE FOLLOWING TO TEST FORMAT B PART 1 (DATA HAZARDS)
-            when x"0000" => RAM_FROM_B <= "0000000000000000"; -- IN r0 (NOP for now)
-            when x"0002" => RAM_FROM_B <= "0000000000000000"; -- IN r1 (NOP for now)
-            when x"0004" => RAM_FROM_B <= "0000000000000000"; -- IN r2 (NOP for now)
-            when x"0006" => RAM_FROM_B <= "0000000000000000"; -- IN r3 (NOP for now)
+            when x"0000" => RAM_FROM_B <= "0100001000000000"; -- IN r0 (NOP for now)
+            when x"0002" => RAM_FROM_B <= "0100001001000000"; -- IN r1 (NOP for now)
+            when x"0004" => RAM_FROM_B <= "0100001010000000"; -- IN r2 (NOP for now)
+            when x"0006" => RAM_FROM_B <= "0100001011000000"; -- IN r3 (NOP for now)
             when x"0008" => RAM_FROM_B <= "0000001001001010"; -- ADD R1, R1, R2
             when x"000A" => RAM_FROM_B <= "0000010010001000"; -- SUB R2, R1, R0
             when x"000C" => RAM_FROM_B <= "0000010001011010";  --SUB R1, R3, R2
@@ -109,65 +109,24 @@ begin
         end case;
     end process;
     
---    process begin   --behavioural process
---    rst <= '0';
---    DEBUG_INSTR_IN <= "0000000000000000";
---    wait until (clk='1' and clk'event);
---    rst <= '1';
---    wait until (clk='1' and clk'event);
---    rst <= '0';
---    wait until (clk='1' and clk'event);
---    DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
---    wait until (clk='1' and clk'event);
---    DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
---    wait until (clk='1' and clk'event);
---    DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
---    wait until (clk='1' and clk'event);
---    DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
---    wait until (clk='1' and clk'event);
---    DEBUG_INSTR_IN <= "0000001011010001"; --ADD r3,r2,r1
---    wait until (clk='1' and clk'event);
---    DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
---    wait until (clk='1' and clk'event);
---    DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
---    wait until (clk='1' and clk'event);
---    DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
---    wait until (clk='1' and clk'event);
---    DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
---    wait until (clk='1' and clk'event);
---    DEBUG_INSTR_IN <= "0000101011000010"; --SHL r3,2
---    wait until (clk='1' and clk'event);
---    DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
---    wait until (clk='1' and clk'event);
---    DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
---    wait until (clk='1' and clk'event);
---    DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
---    wait until (clk='1' and clk'event);
-
---    DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
---    wait until (clk='1' and clk'event);
---);
---    DEBUG_INSTR_IN <= "0000011010001011"; --MUL r2,r1,r3
---    wait until (clk='1' and clk'event);
-
---    DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
---    wait until (clk='1' and clk'event);
-
---    DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
---    wait until (clk='1' and clk'event);
-
---    DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
---    wait until (clk='1' and clk'event);
-
---    DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
---    wait until (clk='1' and clk'event);
-
---    DEBUG_INSTR_IN <= "0100000010000000"; --OUT r2
---    wait until (clk='1' and clk'event);
-
---    DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
---    wait until (clk='1' and clk'event);
-
---    wait;
---    end process;
+    process begin   --behavioural process
+    
+    -- UNCOMMENT FOR FORMAT B PART 1 TESTBENCH
+        wait for 32 us;
+        wait until (clk='1' and clk'event);
+        IN_PORT <= x"0002";
+        wait until (clk='1' and clk'event);
+        wait until (clk='1' and clk'event);
+        IN_PORT <= x"0003";
+        wait until (clk='1' and clk'event);
+        wait until (clk='1' and clk'event);
+        IN_PORT <= x"0001";
+        wait until (clk='1' and clk'event);
+        wait until (clk='1' and clk'event);
+        IN_PORT <= x"0005";
+        wait until (clk='1' and clk'event);
+        wait until (clk='1' and clk'event);
+        IN_PORT <= (others=>'-');
+        wait;
+    end process;
 end Behavioral;

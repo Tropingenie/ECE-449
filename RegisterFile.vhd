@@ -26,11 +26,11 @@ architecture behavioural of register_file is
     if(clk='0' and clk'event) then if(rst='1') then
     
         --Format A testbench hardcode values
-        reg_file(0) <= X"0000";
-        reg_file(1) <= X"0003";
-        reg_file(2) <= X"0005";
+--        reg_file(0) <= X"0000";
+--        reg_file(1) <= X"0003";
+--        reg_file(2) <= X"0005";
         
-        for i in 3 to 7 loop
+        for i in 0 to 7 loop
         reg_file(i)<= (others => '0');
         end loop;
     elsif(wr_enable='1') then
