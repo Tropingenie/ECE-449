@@ -21,6 +21,7 @@ port(
     br_instr_out    : out std_logic_vector(15 downto 0); --if theres a branch then this outputs to the BranchModule
     rd_1,               -- Address of register of first operand
     rd_2,               -- Address of register of second operand
+    branch_issue    : out std_logic; --issues a branch signal to the branch module
     ra              : out std_logic_vector(2 downto 0);
     imm             : out std_logic_vector(3 downto 0)
     );
@@ -84,8 +85,7 @@ begin
                 rd_1 <= (others=>'0');
                 rd_2 <= (others=>'0');
                 imm  <= (others=>'0');
-            when "1000011" => --Format B2 (BR) [Need to graba R[ra] from reg file TODO!]
-                rd_1 <= instruction(8 downto 6);                       
+            when "1000011" 
             when "UUUUUUU" =>
             	assert false report "Initializing" severity note;
             when others =>

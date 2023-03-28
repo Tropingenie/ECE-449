@@ -99,24 +99,27 @@ port(
 );
 end component;
 
-signal IFID_clk, IDEX_clk, EXMEM_clk, MEMWB_clk : std_logic := '0'; -- various clock signals that can be enabled or disabled
-signal stall_en                         : std_logic_vector(3 downto 0); -- Stalls according to the set bit position 0=IFID, 1=IDEX, 2=EXMEM, 3=MEMWB
-signal current_pc, next_pc : std_logic_vector(15 downto 0);              --PC register current and next PC values
+signal IFID_clk, IDEX_clk, 
+       EXMEM_clk, MEMWB_clk             : std_logic := '0';              -- various clock signals that can be enabled or disabled
+signal stall_en                         : std_logic_vector(3 downto 0);  -- Stalls according to the set bit position 0=IFID, 1=IDEX, 2=EXMEM, 3=MEMWB
+signal current_pc, next_pc              : std_logic_vector(15 downto 0); -- PC register current and next PC values
+signal pc_overwrite_en                  : std_logic;                     -- Allows the branch module to update the PC
 signal IF_INSTR, ID_INSTR               : std_logic_vector(15 downto 0); -- Instruction from various stages
 signal IF_PC_IN                         : std_logic_vector(15 downto 0); -- Instruction fetcher PC in from PC register
-signal IF_PC_OUT                        : std_logic_vector(15 downto 0); -- PC register in from Instruction fetcher
+signal IF_PC_OUT                        : std_logic_vector(15 downto 0); -- PC register in from Instruction fetch
 signal IF_BR_PC                         : std_logic_vector(15 downto 0); -- Instruction fetcher to branch module branch PC
-signal IF_BR_INSTR                      : std_logic_vector(15 downto 0); -- Instruction fetcher to branch module 
+signal IF_BR_INSTR                      : std_logic_vector(15 downto 0); -- Instruction fetcher to branch module branch instruction
+signal BM_PC_OVERWRITE                  : std_logic_vector(15 downto 0); -- New PC value from branch calculation to overwrite PC register value
 signal ID_opcode, EX_opcode, 
-    MEM_opcode, WB_opcode               : std_logic_vector(6 downto 0); -- opcode during various stages
+    MEM_opcode, WB_opcode               : std_logic_vector(6 downto 0);  -- opcode during various stages
 signal ID_ra, ID_rb, ID_rc, 
-    EX_ra, MEM_ra, WB_ra                : std_logic_vector(2 downto 0); -- Register addresses in various stages
-signal ID_imm                           : std_logic_vector(3 downto 0); -- Immediate value decoded in the ID stage
-signal ID_WRITE_EN                      : std_logic; -- Register file write enable (for writeback)
+    EX_ra, MEM_ra, WB_ra                : std_logic_vector(2 downto 0);  -- Register addresses in various stages
+signal ID_imm                           : std_logic_vector(3 downto 0);  -- Immediate value decoded in the ID stage
+signal ID_WRITE_EN                      : std_logic;                     -- Register file write enable (for writeback)
 signal EX_AR, MEM_AR                    : std_logic_vector(15 downto 0); -- AR in various stages
 signal ID_data1, ID_data2, EX_data1, 
     EX_data2                            : std_logic_vector(15 downto 0); -- Data from register file for various stages
-signal ID_RSEL                          : std_logic_vector(2 downto 0); -- Selected address of register arbitrator
+signal ID_RSEL                          : std_logic_vector(2 downto 0);  -- Selected address of register arbitrator
 signal ID_RC_DATA                       : std_logic_vector(15 downto 0); -- Intermediate signal for holding contents of RC while selecting if data is from registers or an immediate
 signal IDEX_CONTROL_BITS_IN, 
     IDEX_CONTROL_BITS_OUT, 
@@ -160,7 +163,8 @@ PC : theregister port map (clk=>IFID_CLK, d_in => IF_PC_OUT, d_out => IF_PC_IN, 
 --IF_INSTR <= DEBUG_INSTR_IN;
 I_FETCH :     InstructionFetcher port map(M_INSTR=>RAM_FROM_B, clk=>IFID_CLK, INSTR=>IF_INSTR, M_ADDR=>RAM_ADDR_B, 
                                           rst=>rst, pc_in=>IF_PC_IN, pc_out=>IF_PC_OUT, br_instr => IF_BR_INSTR,
-                                          br_pc => IF_BR_PC, bubble=>bubble);
+                                          br_pc => IF_BR_PC, bubble=>bubble);                               
+                                          
 R_IFID  :     theregister        port map(clk=>IFID_clk, rst=>rst, d_in=>IF_INSTR, d_out=>ID_INSTR); -- IF/ID stage register                                       
 --==============================================================================
 -- Instruction Decode
