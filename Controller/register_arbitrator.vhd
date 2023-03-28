@@ -26,7 +26,7 @@ architecture Behavioral of RegisterArbitrator is
 --SIGNAL DECLARATIONS HERE--
     type reg_array is array (integer range 0 to 7) of std_logic;
     signal reg_checkout : reg_array;
-    signal read_1, read_2, ID_write, WB_write : integer;
+    signal read_1, read_2, ID_write, WB_write, check_in : integer;
 
 begin
     read_1   <= to_integer(unsigned(ID_rd_1));
@@ -59,13 +59,17 @@ begin
                     null;
               end case; 
             
-            -- Check registers back in
-            case(WB_opcode) is
-                  when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110" | "0100001"=> -- Format A that use registers
-                      reg_checkout(WB_write) <= '0';
-                  when others =>
-                      null;
+            -- Check registers back in (with a delay of one cycle)
+            if(falling_edge(clk)) then
+                if check_in > -1 then
+                    reg_checkout(check_in) <= '0';
+                end if;
+                case(WB_opcode) is
+                      when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110" | "0100001"=> -- Format A that use registers
+                          check_in <= WB_write;
+                      when others =>
+                          check_in <= -1;
                 end case;   
-
+            end if;
     end process;
 end Behavioral;
