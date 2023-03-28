@@ -50,7 +50,9 @@ begin
                     if reg_checkout(read_1) = '1' or reg_checkout(read_2) = '1' then
                         stall_IDEX <= '1';
                     else
-                        reg_checkout(ID_write) <= '1';
+                        if not(ID_opcode = "0100000") then
+                            reg_checkout(ID_write) <= '1';
+                        end if;
                         stall_IDEX <= '0';
                     end if; 
                 when others =>
