@@ -44,11 +44,7 @@ process(clk, rst) begin
             alu_stall_enable <= '0';
         else
             assert false report "Debug: ALU retarder not currently stalling" severity note;
-             case ID_OPCODE is 
-         
-             when "0000000" | "0000100" | "0000111" | "0100000" | "0100001"| "0010011"=>  --NOP, NAND, TEST, OUT, IN, MOV
-             -- 1 clock (no delay)
-             null;       
+             case ID_OPCODE is       
              when "0000001" | "0000010" =>                    --ADD, SUB op
 --                counter <= 0;
 --                alu_stall_enable <= '1';
@@ -60,11 +56,9 @@ process(clk, rst) begin
              when "0000011" =>                    --MULT op
             
                 counter <= 3;
-                alu_stall_enable <= '1';
-             when "UUUUUUU" | "XXXXXXX" =>
-                 assert false report "Uninitialized opcode" severity note;              
+                alu_stall_enable <= '1';             
              when others =>
-                 assert false report "ALU operation out of range" severity failure;
+                 null; 
                  
             end case;
         end if;

@@ -38,7 +38,7 @@ process(mem_opcode) begin
             io_sel <= '1';
             ram_ena <= '0';
             we <= '0';
-        when "0010000" | "0010010" =>   --LOAD, LOADIMM
+        when "0010000" =>   --LOAD
             data_mem_sel <= '1';
             io_sel <= '0';
             ram_ena <= '1';
@@ -53,7 +53,7 @@ process(mem_opcode) begin
             io_sel <= '0';
             ram_ena <= '1';
             we <= '1';           
-        when others =>
+        when others => -- Includes LOADIMM
             data_mem_sel <= '0';
             ram_ena <= '0';
             io_sel <= '0';

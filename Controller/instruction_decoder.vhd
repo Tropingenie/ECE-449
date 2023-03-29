@@ -21,7 +21,8 @@ port(
     rd_1,               -- Address of register of first operand
     rd_2,               -- Address of register of second operand
     ra              : out std_logic_vector(2 downto 0);
-    imm             : out std_logic_vector(3 downto 0)--;
+    imm_a             : out std_logic_vector(3 downto 0);
+    imm_l           : out std_logic_vector(8 downto 0)
     --bubble          : in std_logic
     );
 end InstructionDecoder;
@@ -45,7 +46,8 @@ begin
     
     with opcode select ra <=
          --(others=>'-') when "0000000" -- (NOP)
-         instruction(8 downto 6) when "0000001"|"0000010"|"0000011"|"0000100"|"0000101"|"0000110"|"0100001"|"0010011", -- Format A1 (ADD, SUB, MUL, NAND, SHL, SHR, IN, MOV)
+         instruction(8 downto 6) when "0000001"|"0000010"|"0000011"|"0000100"|"0000101"|"0000110"|"0100001"|"0010011", -- Format A1 (ADD, SUB, MUL, NAND, SHL, SHR, IN, MOV
+         "111" when "0010010", -- LOADIMM
          --when "0000101"|"0000110", -- Format A2 (SHFT R, L)
          --when "0000111"|"0100000", --Format A3 (TEST Op, Out)
          --when "0100001", -- Format A3 (IN)
@@ -54,13 +56,14 @@ begin
     with opcode select rd_1 <=
         instruction(5 downto 3) when "0000001"|"0000010"|"0000011"|"0000100"|"0010011", -- Format A1 (ADD, SUB, MUL, NAND, MOV),
         instruction(8 downto 6) when "0000101"|"0000110"|"0000111"|"0100000", -- Format A2 (SHFT R, L, TEST, OUT)
+        "111" when "0010010", --LOADIMM
         (others=>'-') when others;
         
     with opcode select rd_2 <=
         instruction(2 downto 0) when "0000001"|"0000010"|"0000011"|"0000100", -- Format A1 (ADD, SUB, MUL, NAND)
         (others=>'-') when others;
         
-    with opcode select imm <=
+    with opcode select imm_a <=
         instruction(3 downto 0) when "0000101"|"0000110", -- Format A2 (SHFT R, L)
         (others=>'-') when others;
 --    process(instruction)
@@ -117,5 +120,9 @@ begin
 --        end case;
 --    end process;
 
+        
+    with opcode select imm_l <=
+            instruction(8 downto 0) when "0010010", -- LOADIMM
+            (others=>'-') when others;
 
 end Behavioral;

@@ -79,7 +79,8 @@ port(
     instruction     : in std_logic_vector(15 downto 0);
     opcode_out      : out std_logic_vector(6 downto 0);
     rd_1, rd_2, ra  : out std_logic_vector(2 downto 0);
-    imm             : out std_logic_vector(3 downto 0)
+    imm_a           : out std_logic_vector(3 downto 0);
+    imm_l           : out std_logic_vector(8 downto 0)
 );
 end component;
 
@@ -128,9 +129,16 @@ signal BM_BR_EN                         : std_logic;                     -- Bran
 signal ID_opcode, EX_opcode, 
     MEM_opcode, WB_opcode               : std_logic_vector(6 downto 0);  -- opcode during various stages
 signal ID_ra, ID_rb, ID_rc, 
+<<<<<<< HEAD
     EX_ra, MEM_ra, WB_ra                : std_logic_vector(2 downto 0);  -- Register addresses in various stages
 signal ID_imm                           : std_logic_vector(3 downto 0);  -- Immediate value decoded in the ID stage
 signal ID_WRITE_EN                      : std_logic;                     -- Register file write enable (for writeback)
+=======
+    EX_ra, MEM_ra, WB_ra                : std_logic_vector(2 downto 0); -- Register addresses in various stages
+signal ID_imm_a                         : std_logic_vector(3 downto 0); -- Immediate value decoded in the ID stage (Format A3)
+signal ID_imm_l                         : std_logic_vector(8 downto 0); -- Immediate value decoded in the ID stage (Format L1)
+signal ID_WRITE_EN                      : std_logic; -- Register file write enable (for writeback)
+>>>>>>> 072fd37 (Semi functional LOADIMM and Format L testbench 0)
 signal EX_AR, MEM_AR                    : std_logic_vector(15 downto 0); -- AR in various stages
 signal ID_data1, ID_data2, EX_data1, 
     EX_data2                            : std_logic_vector(15 downto 0); -- Data from register file for various stages
@@ -148,6 +156,7 @@ signal MEM_OPCODE_VAL                   : unsigned(15 downto 0); -- For comparis
 signal WB_DATA                          : std_logic_vector(15 downto 0); -- Data to write back in WB stage
 --signal bubble                           : std_logic; -- Signal to indicate to IF to introduce a bubble
 signal data_mem_sel, instr_mem_sel, io_sel : std_logic; -- Signals to control during memory access
+signal EX_L, MEM_L                      : std_logic; --Bits to carry m.l from format L1 through to memory stage
 
 signal SUBROUTINE_R7_WRITEBACK: std_logic_vector(15 downto 0); --branch subroutine r7 writeback value
 begin
@@ -192,8 +201,13 @@ R_IFID  :     theregister        port map(clk=>IFID_clk, rst=>rst, d_in=>IF_INST
 -- Instruction Decode
 
 I_DECODE:     InstructionDecoder port map(instruction=>ID_INSTR, opcode_out=>ID_opcode, 
+<<<<<<< HEAD
                                           rd_1=>ID_rb, rd_2=>ID_rc, ra=>ID_ra, imm=>ID_imm);
                                      
+=======
+                                          rd_1=>ID_rb, rd_2=>ID_rc, ra=>ID_ra, imm_a=>ID_imm_a, imm_l=>ID_imm_l);
+
+>>>>>>> 072fd37 (Semi functional LOADIMM and Format L testbench 0)
 REG_FILE:     register_file      port map(clk=>clk, rst=>rst, rd_index1=>ID_rb, 
                                           rd_index2=>ID_rsel, rd_data1=>ID_data1, 
                                           rd_data2=>ID_RC_DATA, wr_index=>WB_ra, 
@@ -202,11 +216,12 @@ REG_FILE:     register_file      port map(clk=>clk, rst=>rst, rd_index1=>ID_rb,
 ID_rsel <= ID_rc;  
 
 -- Register/Immediate select for input to the ALU
- ID_DATA2 <=  x"000" & ID_imm when ID_opcode = "0000110" or ID_opcode = "0000101" else -- Format A2 needs the immediate as the second operand
+ ID_DATA2 <=  x"000" & ID_imm_a when ID_opcode = "0000110" or ID_opcode = "0000101" else -- Format A2 needs the immediate as the second operand (padded with 12 bits)
+              x"0"&"000"&ID_imm_l when ID_opcode = "0010010" else             -- LOADIMM needs its immediate (pad with 7 bits)
               ID_RC_DATA; -- All other instructions just use the second operand verbatim (may be 0 if there is no second operand)
 
 -- Concatenate control bits for input to register
-IDEX_CONTROL_BITS_IN <= ID_opcode & ID_ra & "------"; -- Contains: opcode(15 downto 9), ra (8 downto 6)
+IDEX_CONTROL_BITS_IN <= ID_opcode & ID_ra & id_imm_l(8) & "-----"; -- Contains: opcode(15 downto 9), ra (8 downto 6), m.1 (bit 5, if any, from Format L.2)
 
 -- Inter-stage registers                
 R_IDEX_1:     theregister port map(clk=>IDEX_clk, rst=>rst, d_in=>ID_data1, d_out=>EX_DATA1); -- ALU in1
@@ -218,12 +233,13 @@ R_IDEX_3:     theregister port map(clk=>IDEX_clk, rst=>rst, d_in=>IDEX_CONTROL_B
 -- Execute
 EX_opcode <= IDEX_CONTROL_BITS_OUT(15 downto 9);
 EX_ra <= IDEX_CONTROL_BITS_OUT(8 downto 6);
+EX_L <= IDEX_CONTROL_BITS_OUT(5);
 theALU: ALU port map(in1=>EX_DATA1, in2=>EX_DATA2, op_code=>EX_opcode, clk=>clk, 
                      rst=>rst, result=> EX_AR, Z_flag=>EX_flags(2), N_flag=>EX_flags(1), 
                      O_Flag=>EX_flags(0));
                     
 -- Concatenate control bits for input to register                     
-EXMEM_CONTROL_BITS_IN <= EX_OPCODE & EX_FLAGS & EX_RA & "---"; -- Contains: Opcode(15 downto 9), Flags (8 downto 6), ra (5 downto 3)
+EXMEM_CONTROL_BITS_IN <= EX_OPCODE & EX_FLAGS & EX_RA & EX_L & "--"; -- Contains: Opcode(15 downto 9), Flags (8 downto 6), ra (5 downto 3), m.1 (bit 2, if any, from Format L.2)
 
 -- Inter-stage registers 
 R_EXMEM_1: theregister port map(clk=>EXMEM_clk, rst=>rst, d_in=>EX_AR, d_out=>MEM_AR); -- ALU output (AR)
@@ -235,6 +251,7 @@ R_EXMEM_2: theregister port map(clk=>EXMEM_clk, rst=>rst, d_in=>EXMEM_CONTROL_BI
 MEM_OPCODE <= EXMEM_CONTROL_BITS_OUT(15 downto 9);
 MEM_FLAGS <= EXMEM_CONTROL_BITS_OUT(8 downto 6);
 MEM_RA <= EXMEM_CONTROL_BITS_OUT(5 downto 3);
+MEM_L <= EXMEM_CONTROL_BITS_OUT(2);
 MEM_OPCODE_VAL <= unsigned("000000000" & MEM_OPCODE);
 
 -- MEM gets forwarded data from ALU to solve writeback latency issue. If the data comes from memory/IO, use MEM_AR
@@ -250,7 +267,7 @@ MEM:    MemoryAccessUnit port map(AR=>MEM_WB_AR, IN_PORT=>IN_PORT, RAM_READA=>RA
 --           (others=>'-');--don't care
 
 -- Concatenate control bits for input to register
-MEMWB_CONTROL_BITS_IN <= MEM_OPCODE & MEM_FLAGS & MEM_RA & "---"; -- Contains: Opcode(15 downto 9), Flags (8 downto 6), ra (5 downto 3)
+MEMWB_CONTROL_BITS_IN <= MEM_OPCODE & MEM_FLAGS & MEM_RA & MEM_L &"--"; -- Contains: Opcode(15 downto 9), Flags (8 downto 6), ra (5 downto 3), m.1 (bit 2, if any, from Format L.2)
 
 -- Inter-stage registers        
 R_MEMWB_1: theregister port map(clk=>MEMWB_clk, rst=>rst, d_in=>MEM_WB_DATA, d_out=>WB_DATA);

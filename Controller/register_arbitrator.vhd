@@ -54,9 +54,10 @@ begin
             middle_instr <= current_instr; -- accounts for down clock cycle
             current_instr <= ID_opcode & ID_rd_1 & ID_rd_2 & ID_wr;
            
+       if(rising_edge(clk)) then
             -- Stall pipeline when trying to read from a checked out register, and check out the writeback register when proceeding
             case(ID_opcode) is
-                when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110" | "0100000" | "0100001"=> -- Format A that use registers
+                when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110" | "0100000" | "0100001" | "0010011"| "0010010"=> -- Format A that use registers
                     if (
                         (reg_checkout(read_1) = '1' or reg_checkout(read_2) = '1') 
                         and (single_reg_operation = '0' or not (current_instr = last_instr))
@@ -70,15 +71,15 @@ begin
                     end if; 
                 when others =>
                     null;
-              end case; 
-            
+              end case;
+          end if; 
+        if(falling_edge(clk)) then
             -- Check registers back in (with a delay of one cycle)
-            if(falling_edge(clk)) then
                 if check_in > -1 then
                     reg_checkout(check_in) <= '0';
                 end if;
                 case(WB_opcode) is
-                      when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110" | "0100001"=> -- Format A that use registers
+                      when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110" | "0100001" | "0010010"=> -- Format A that use registers, MOV, LOADIMM
                           check_in <= WB_write;
                       when others =>
                           check_in <= -1;

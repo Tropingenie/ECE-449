@@ -131,6 +131,13 @@ begin
 
             when "0100001" =>                               --IN Op
             --???
+            
+            when "0010010" =>           --LOADIMM
+                if in2(8) = '1' then -- bit 8 is "hacked" to be the m.l flag
+                    data3 <= signed(in2(7 downto 0)&in1(7 downto 0));
+                else
+                    data3 <= signed(in1(15 downto 8) & in2(7 downto 0));
+                end if;
                 
             when "UUUUUUU" | "XXXXXXX" =>
                 assert false report "Uninitialized data in ALU" severity note;    

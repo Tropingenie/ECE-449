@@ -80,15 +80,12 @@ begin
         
         
         -- UNCOMMENT THE FOLLOWING FOR TESTING DATA HAZARDS (FORMAT A WITHOUT NOPS)
-            when x"0000" => RAM_FROM_B <= "0100001001000000"; -- IN r1 
-            when x"0002" => RAM_FROM_B <= "0100001010000000"; -- IN r2 
-            when x"0004" => RAM_FROM_B <= "0000001011010001"; --ADD r3,r2,r1
-            when x"0006" => RAM_FROM_B <= "0000101011000010"; --SHL r3,2
-            when x"0008" => RAM_FROM_B <= "0000011010001011"; --MUL r2,r1,r3
-            when x"000A" => RAM_FROM_B <= "0100000010000000"; --OUT r2
-            
-            --MOV test since LOADIMM not implemented yet
-            when x"000C" => RAM_FROM_B <= "0010011111010000"; --MOV R7, R2
+--            when x"0000" => RAM_FROM_B <= "0100001001000000"; -- IN r1 
+--            when x"0002" => RAM_FROM_B <= "0100001010000000"; -- IN r2 
+--            when x"0004" => RAM_FROM_B <= "0000001011010001"; --ADD r3,r2,r1
+--            when x"0006" => RAM_FROM_B <= "0000101011000010"; --SHL r3,2
+--            when x"0008" => RAM_FROM_B <= "0000011010001011"; --MUL r2,r1,r3
+--            when x"000A" => RAM_FROM_B <= "0100000010000000"; --OUT r2
             
         -- UNCOMMENT THE FOLLOWING TO TEST FORMAT B PART 1 (DATA HAZARDS)
 --            when x"0000" => RAM_FROM_B <= "0100001000000000"; -- IN r0
@@ -99,6 +96,16 @@ begin
 --            when x"000A" => RAM_FROM_B <= "0000010010001000"; -- SUB R2, R1, R0
 --            when x"000C" => RAM_FROM_B <= "0000010001011010";  --SUB R1, R3, R2
 --            when x"000E" => RAM_FROM_B <= "0000000000000000";
+
+        -- UNCOMMENT THE FOLLOWING TO TEST FORMAT L TEST CODE
+            when x"0000" => RAM_FROM_B <= "0010010000001111"; -- LOADIMM.LOWER 15
+            when x"0002" => RAM_FROM_B <= "0010010100000101"; -- LOADIMM.UPPER 5
+            when x"0004" => RAM_FROM_B <= "0010011001111000"; -- MOV R1, R7
+            when x"0006" => RAM_FROM_B <= "0010010000000000"; -- LOADIMM.LOWER 0
+            when x"0008" => RAM_FROM_B <= "0010010000000110"; -- LOADIMM.UPPER 6
+            when x"000A" => RAM_FROM_B <= "0010011010111000"; -- MOV R2, R7
+--            when x"000C" => RAM_FROM_B <= "0000010001011010"; -- STORE R2, R1
+--            when x"000E" => RAM_FROM_B <= "0000000000000000"; -- LOAD R3, R2
             
           -- Leave this :)
             when others => assert false report "Testbench memory out of range" severity note;
@@ -107,19 +114,19 @@ begin
     
     process begin   --behavioural process
     -- UNCOMMENT FOR FORMAT A TESTBENCH
-        wait for 30 us;
-        wait until (clk='1' and clk'event);
-        IN_PORT <= x"0003";
-        wait until (clk='1' and clk'event);
-        wait until (clk='1' and clk'event);
-        wait until (clk='1' and clk'event);
-        wait until (clk='1' and clk'event);
-        IN_PORT <= x"0005";
-        wait until (clk='1' and clk'event);
-        wait until (clk='1' and clk'event);
-        wait until (clk='1' and clk'event);
-        IN_PORT <= (others=>'-');
-        wait;
+--        wait for 30 us;
+--        wait until (clk='1' and clk'event);
+--        IN_PORT <= x"0003";
+--        wait until (clk='1' and clk'event);
+--        wait until (clk='1' and clk'event);
+--        wait until (clk='1' and clk'event);
+--        wait until (clk='1' and clk'event);
+--        IN_PORT <= x"0005";
+--        wait until (clk='1' and clk'event);
+--        wait until (clk='1' and clk'event);
+--        wait until (clk='1' and clk'event);
+--        IN_PORT <= (others=>'-');
+--        wait;
     
     
     -- UNCOMMENT FOR FORMAT B PART 1 TESTBENCH
@@ -146,5 +153,6 @@ begin
 --        wait;
         
         null;
+        wait;
     end process;
 end Behavioral;
