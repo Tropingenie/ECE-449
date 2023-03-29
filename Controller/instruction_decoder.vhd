@@ -34,7 +34,7 @@ begin
     opcode <= instruction(15 downto 9); --when bubble = '0' else "0000000";
     opcode_out <= opcode;
     
-    process(opcode)
+    process(instruction)
     begin
     	--assert false report "Instruction: " & to_hstring(instruction) severity note;
     	--assert false report "Opcode: " & to_hstring(opcode) severity note;

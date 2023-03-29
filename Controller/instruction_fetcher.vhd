@@ -39,7 +39,7 @@ begin
     REG_PC : theregister port map (clk=>clk, rst=>rst, d_in => next_pc, d_out => current_pc);
     process(clk, rst)
     begin
-        if rst = '1' or next_pc = "UUUU" then
+        if rst = '1' or next_pc = "UUUUUUUUUUUUUUUU" then
             PC <= (others=>'0');
         elsif RISING_EDGE(clk) then
             --if bubble = '1' then

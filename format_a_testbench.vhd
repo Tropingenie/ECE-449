@@ -112,18 +112,23 @@ begin
     process begin   --behavioural process
     
     -- UNCOMMENT FOR FORMAT B PART 1 TESTBENCH
-        wait for 32 us;
+        wait for 30 us;
         wait until (clk='1' and clk'event);
         IN_PORT <= x"0002";
+        wait until (clk='1' and clk'event);
+        wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         IN_PORT <= x"0003";
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
+        wait until (clk='1' and clk'event);
         IN_PORT <= x"0001";
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
+        wait until (clk='1' and clk'event);
         IN_PORT <= x"0005";
+        wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         IN_PORT <= (others=>'-');

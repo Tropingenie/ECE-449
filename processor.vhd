@@ -117,7 +117,7 @@ signal IDEX_CONTROL_BITS_IN,
     MEMWB_CONTROL_BITS_IN, 
     MEMWB_CONTROL_BITS_OUT              : std_logic_vector(15 downto 0); -- Intermediate signals to concatenate control bits for input into a fixed-width register
 signal EX_Flags, MEM_Flags, WB_Flags    : std_logic_vector(2 downto 0); -- ALU flags
-signal MEM_WB_DATA, MEM_DATA            : std_logic_vector(15 downto 0); -- Intermediate signals for MEM stage to select what to pass to WB
+signal MEM_WB_DATA, MEM_WB_AR, MEM_DATA : std_logic_vector(15 downto 0); -- Intermediate signals for MEM stage to select what to pass to WB
 signal MEM_OPCODE_VAL                   : unsigned(15 downto 0); -- For comparison using <, >, etc
 signal WB_DATA                          : std_logic_vector(15 downto 0); -- Data to write back in WB stage
 --signal bubble                           : std_logic; -- Signal to indicate to IF to introduce a bubble
@@ -201,8 +201,12 @@ MEM_FLAGS <= EXMEM_CONTROL_BITS_OUT(8 downto 6);
 MEM_RA <= EXMEM_CONTROL_BITS_OUT(5 downto 3);
 MEM_OPCODE_VAL <= unsigned("000000000" & MEM_OPCODE);
 
--- MEM gets forwarded data from ALU to solve latency issue for now
-MEM:    MemoryAccessUnit port map(AR=>EX_AR, IN_PORT=>IN_PORT, RAM_READA=>RAM_FROM_A, WB_DATA=>MEM_WB_DATA, OUT_PORT=>OUT_PORT, RAM_WRITE=>RAM_TO, data_mem_sel=>data_mem_sel, io_sel=>io_sel);
+-- MEM gets forwarded data from ALU to solve writeback latency issue. If the data comes from memory/IO, use MEM_AR
+with mem_opcode select MEM_WB_AR <= 
+    MEM_AR when "0100001", -- Add more cases here as we discover them
+    EX_AR  when others;
+
+MEM:    MemoryAccessUnit port map(AR=>MEM_WB_AR, IN_PORT=>IN_PORT, RAM_READA=>RAM_FROM_A, WB_DATA=>MEM_WB_DATA, OUT_PORT=>OUT_PORT, RAM_WRITE=>RAM_TO, data_mem_sel=>data_mem_sel, io_sel=>io_sel);
 
 -- Select AR from ALU or data from memory to pass to WB stage
 --MEM_WB_DATA <= MEM_AR when MEM_opcode_val < 7 else

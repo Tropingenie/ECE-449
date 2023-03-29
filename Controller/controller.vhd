@@ -91,18 +91,20 @@ stall_en <= '0' & ALU_STALL & (REG_STALL or ALU_STALL) & (REG_STALL or ALU_STALL
 process(clk, rst) begin
     if rst = '1' then
         stall_stage <= (others => '0');
-    elsif (rising_edge(clk)) then
+    else--if (rising_edge(clk)) then
         
         --Enable writeback for one clock
         last_wb_bits <= delay_wb_bits;
         delay_wb_bits <= current_wb_bits; -- Need an extra clock delay so that there is a clock edge where last and current differ
         current_wb_bits <= MEMWB_CONTROL_BITS_OUT;
         
+        
         case(WB_OPCODE) is
             when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110" | "0100001" => -- Format A that write to registers
-                if last_wb_bits = current_wb_bits then
-                    ID_WRITE_EN <= '0';
-                    written <= '1';
+                if written = '1' and last_wb_bits = current_wb_bits then
+                    if falling_edge(clk) then
+                        ID_WRITE_EN <= '0';
+                    end if;
                 elsif written <= '0' then
                     ID_WRITE_EN <= '1';
                     written <= '1';
