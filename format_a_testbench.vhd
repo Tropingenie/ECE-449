@@ -87,22 +87,22 @@ begin
         
         
         -- UNCOMMENT THE FOLLOWING FOR TESTING DATA HAZARDS (FORMAT A WITHOUT NOPS)
---            when x"0000" => RAM_FROM_B <= "0000000000000000"; -- IN r1 (NOP for now)
---            when x"0002" => RAM_FROM_B <= "0000000000000000"; -- IN r2 (NOP for now)
---            when x"0004" => RAM_FROM_B <= "0000001011010001"; --ADD r3,r2,r1
---            when x"0006" => RAM_FROM_B <= "0000101011000010"; --SHL r3,2
---            when x"0008" => RAM_FROM_B <= "0000011010001011"; --MUL r2,r1,r3
---            when x"000A" => RAM_FROM_B <= "0100000010000000"; --OUT r2
+            when x"0000" => RAM_FROM_B <= "0100001001000000"; -- IN r1 
+            when x"0002" => RAM_FROM_B <= "0100001010000000"; -- IN r2 
+            when x"0004" => RAM_FROM_B <= "0000001011010001"; --ADD r3,r2,r1
+            when x"0006" => RAM_FROM_B <= "0000101011000010"; --SHL r3,2
+            when x"0008" => RAM_FROM_B <= "0000011010001011"; --MUL r2,r1,r3
+            when x"000A" => RAM_FROM_B <= "0100000010000000"; --OUT r2
             
         -- UNCOMMENT THE FOLLOWING TO TEST FORMAT B PART 1 (DATA HAZARDS)
-            when x"0000" => RAM_FROM_B <= "0100001000000000"; -- IN r0 (NOP for now)
-            when x"0002" => RAM_FROM_B <= "0100001001000000"; -- IN r1 (NOP for now)
-            when x"0004" => RAM_FROM_B <= "0100001010000000"; -- IN r2 (NOP for now)
-            when x"0006" => RAM_FROM_B <= "0100001011000000"; -- IN r3 (NOP for now)
-            when x"0008" => RAM_FROM_B <= "0000001001001010"; -- ADD R1, R1, R2
-            when x"000A" => RAM_FROM_B <= "0000010010001000"; -- SUB R2, R1, R0
-            when x"000C" => RAM_FROM_B <= "0000010001011010";  --SUB R1, R3, R2
-            when x"000E" => RAM_FROM_B <= "0000000000000000";
+--            when x"0000" => RAM_FROM_B <= "0100001000000000"; -- IN r0
+--            when x"0002" => RAM_FROM_B <= "0100001001000000"; -- IN r1
+--            when x"0004" => RAM_FROM_B <= "0100001010000000"; -- IN r2
+--            when x"0006" => RAM_FROM_B <= "0100001011000000"; -- IN r3
+--            when x"0008" => RAM_FROM_B <= "0000001001001010"; -- ADD R1, R1, R2
+--            when x"000A" => RAM_FROM_B <= "0000010010001000"; -- SUB R2, R1, R0
+--            when x"000C" => RAM_FROM_B <= "0000010001011010";  --SUB R1, R3, R2
+--            when x"000E" => RAM_FROM_B <= "0000000000000000";
             
           -- Leave this :)
             when others => assert false report "Testbench memory out of range" severity note;
@@ -110,20 +110,11 @@ begin
     end process;
     
     process begin   --behavioural process
-    
-    -- UNCOMMENT FOR FORMAT B PART 1 TESTBENCH
+    -- UNCOMMENT FOR FORMAT A TESTBENCH
         wait for 30 us;
-        wait until (clk='1' and clk'event);
-        IN_PORT <= x"0002";
-        wait until (clk='1' and clk'event);
-        wait until (clk='1' and clk'event);
-        wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         IN_PORT <= x"0003";
         wait until (clk='1' and clk'event);
-        wait until (clk='1' and clk'event);
-        wait until (clk='1' and clk'event);
-        IN_PORT <= x"0001";
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
@@ -133,5 +124,31 @@ begin
         wait until (clk='1' and clk'event);
         IN_PORT <= (others=>'-');
         wait;
+    
+    
+    -- UNCOMMENT FOR FORMAT B PART 1 TESTBENCH
+--        wait for 30 us;
+--        wait until (clk='1' and clk'event);
+--        IN_PORT <= x"0002";
+--        wait until (clk='1' and clk'event);
+--        wait until (clk='1' and clk'event);
+--        wait until (clk='1' and clk'event);
+--        wait until (clk='1' and clk'event);
+--        IN_PORT <= x"0003";
+--        wait until (clk='1' and clk'event);
+--        wait until (clk='1' and clk'event);
+--        wait until (clk='1' and clk'event);
+--        IN_PORT <= x"0001";
+--        wait until (clk='1' and clk'event);
+--        wait until (clk='1' and clk'event);
+--        wait until (clk='1' and clk'event);
+--        IN_PORT <= x"0005";
+--        wait until (clk='1' and clk'event);
+--        wait until (clk='1' and clk'event);
+--        wait until (clk='1' and clk'event);
+--        IN_PORT <= (others=>'-');
+--        wait;
+        
+        null;
     end process;
 end Behavioral;

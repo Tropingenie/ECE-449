@@ -46,7 +46,7 @@ begin
            
             -- Stall pipeline when trying to read from a checked out register, and check out the writeback register when proceeding
             case(ID_opcode) is
-                when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110" | "0100000"=> -- Format A that use registers
+                when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110" | "0100000" | "0100001"=> -- Format A that use registers
                     if reg_checkout(read_1) = '1' or reg_checkout(read_2) = '1' then
                         stall_IDEX <= '1';
                     else
