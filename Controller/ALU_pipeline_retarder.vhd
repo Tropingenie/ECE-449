@@ -46,7 +46,7 @@ process(clk, rst) begin
             assert false report "Debug: ALU retarder not currently stalling" severity note;
              case ID_OPCODE is 
          
-             when "0000000" | "0000100" | "0000111" | "0100000" | "0100001"=>                    --NOP, NAND, TEST, OUT, IN
+             when "0000000" | "0000100" | "0000111" | "0100000" | "0100001"| "0010011"=>  --NOP, NAND, TEST, OUT, IN, MOV
              -- 1 clock (no delay)
              null;       
              when "0000001" | "0000010" =>                    --ADD, SUB op

@@ -126,7 +126,7 @@ begin
                     n_flag <= '0';
                 end if;
 
-            when "0100000" =>                               --OUT Op
+            when "0100000"|"0010011" =>                    --OUT, MOV Op
             data3 <= data1;
 
             when "0100001" =>                               --IN Op

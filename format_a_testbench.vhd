@@ -87,6 +87,9 @@ begin
             when x"0008" => RAM_FROM_B <= "0000011010001011"; --MUL r2,r1,r3
             when x"000A" => RAM_FROM_B <= "0100000010000000"; --OUT r2
             
+            --MOV test since LOADIMM not implemented yet
+            when x"000C" => RAM_FROM_B <= "0010011111010000"; --MOV R7, R2
+            
         -- UNCOMMENT THE FOLLOWING TO TEST FORMAT B PART 1 (DATA HAZARDS)
 --            when x"0000" => RAM_FROM_B <= "0100001000000000"; -- IN r0
 --            when x"0002" => RAM_FROM_B <= "0100001001000000"; -- IN r1

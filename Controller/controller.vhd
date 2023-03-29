@@ -129,7 +129,7 @@ process(clk, rst) begin
         
         
         case(WB_OPCODE) is
-            when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110" | "0100001" => -- Format A that write to registers
+            when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110" | "0100001"| "0010011" => -- Format A that write to registers, and MOV
                 if written = '1' and last_wb_bits = current_wb_bits then
                     if falling_edge(clk) then
                         ID_WRITE_EN <= '0';

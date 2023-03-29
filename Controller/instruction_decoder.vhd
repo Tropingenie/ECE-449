@@ -45,14 +45,14 @@ begin
     
     with opcode select ra <=
          --(others=>'-') when "0000000" -- (NOP)
-         instruction(8 downto 6) when "0000001"|"0000010"|"0000011"|"0000100"|"0000101"|"0000110"|"0100001", -- Format A1 (ADD, SUB, MUL, NAND, SHL, SHR, IN)
+         instruction(8 downto 6) when "0000001"|"0000010"|"0000011"|"0000100"|"0000101"|"0000110"|"0100001"|"0010011", -- Format A1 (ADD, SUB, MUL, NAND, SHL, SHR, IN, MOV)
          --when "0000101"|"0000110", -- Format A2 (SHFT R, L)
          --when "0000111"|"0100000", --Format A3 (TEST Op, Out)
          --when "0100001", -- Format A3 (IN)
         (others=>'-') when others;
             
     with opcode select rd_1 <=
-        instruction(5 downto 3) when "0000001"|"0000010"|"0000011"|"0000100", -- Format A1 (ADD, SUB, MUL, NAND),
+        instruction(5 downto 3) when "0000001"|"0000010"|"0000011"|"0000100"|"0010011", -- Format A1 (ADD, SUB, MUL, NAND, MOV),
         instruction(8 downto 6) when "0000101"|"0000110"|"0000111"|"0100000", -- Format A2 (SHFT R, L, TEST, OUT)
         (others=>'-') when others;
         
