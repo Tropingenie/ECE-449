@@ -36,6 +36,15 @@ port(
     data_mem_sel : out STD_LOGIC; -- 1 when reading from data memory, 0 when passing AR from ALU/writing to memory
     instr_mem_sel : out STD_LOGIC; -- 1 when using RAM, 0 when using ROM
     io_sel : out STD_LOGIC; -- 1 when using IO, 0 when using memory
+    br_pc      : in std_logic_vector(15 downto 0);  --Value of the PC of the branch instruction that is saved if the branch is taken
+    br_instr   : in std_logic_vector(15 downto 0);  --The branch instrcution given to the BranchModule
+    pc_out     : out std_logic_vector(15 downto 0); --PC output, either
+    pc_br_overwrite : out std_logic;                --PC overwrite enable if branch is taken
+    r7_in      : in std_logic_vector(15 downto 0);  --data from r7
+    r7_out     : out std_logic_vector(15 downto 0); --data to be written to r7
+    reg_data_in: in std_logic_vector(15 downto 0);  --data from register file R[ra]
+    n_flag     : in std_logic;                             --Negtive flag of the the test instruction issueed immidiately before the branch instruction    
+    z_flag     : in std_logic;                             --Zero flag of the the test instruction issueed immidiately before the branch instruction 
     ram_ena, ram_enb, we : out std_logic 
 );
 end component;
@@ -62,7 +71,6 @@ end component;
 component InstructionDecoder is
 port(
     instruction     : in std_logic_vector(15 downto 0);
-    br_instr_out    : out std_logic_vector(15 downto 0);
     opcode_out      : out std_logic_vector(6 downto 0);
     rd_1, rd_2, ra  : out std_logic_vector(2 downto 0);
     imm             : out std_logic_vector(3 downto 0)
@@ -134,6 +142,7 @@ signal WB_DATA                          : std_logic_vector(15 downto 0); -- Data
 signal bubble                           : std_logic; -- Signal to indicate to IF to introduce a bubble
 signal data_mem_sel, instr_mem_sel, io_sel : std_logic; -- Signals to control during memory access
 
+signal SUBROUTINE_R7_WRITEBACK: std_logic_vector(15 downto 0); --branch subroutine r7 writeback value
 begin
 
 -- Controller
@@ -142,7 +151,9 @@ MAINCONT    :   controller port map(clk=>clk, pipe_clk=>EXMEM_clk, rst=>rst, ID_
                                     MEM_opcode=>MEM_opcode, WB_opcode=>WB_opcode, ID_WRITE_EN=>ID_WRITE_EN,
                                     stall_en=>stall_en, bubble=>bubble, data_mem_sel=>data_mem_sel, 
                                     instr_mem_sel=>instr_mem_sel, io_sel=>io_sel, ram_ena=>ram_ena,
-                                    ram_enb=>ram_enb, we=>ram_we);
+                                    ram_enb=>ram_enb, we=>ram_we, br_pc => IF_BR_PC, br_instr => IF_BR_INSTR, pc_out => BM_PC_OVERWRITE,
+                                    pc_br_overwrite => pc_overwrite_en,r7_in => EX_DATA1, r7_out => SUBROUTINE_R7_WRITEBACK,
+                                    reg_data_in => EX_DATA2, n_flag => EX_FLAGS(1), z_flag => EX_FLAGS(2));
                                    
 
 -- -- Stalls according to the set bit position 0=IFID, 1=IDEX, 2=EXMEM, 3=MEMWB                                    
@@ -199,7 +210,7 @@ EX_ra <= IDEX_CONTROL_BITS_OUT(8 downto 6);
 theALU: ALU port map(in1=>EX_DATA1, in2=>EX_DATA2, op_code=>EX_opcode, clk=>clk, 
                      rst=>rst, result=> EX_AR, Z_flag=>EX_flags(2), N_flag=>EX_flags(1), 
                      O_Flag=>EX_flags(0));
-
+                    
 -- Concatenate control bits for input to register                     
 EXMEM_CONTROL_BITS_IN <= EX_OPCODE & EX_FLAGS & EX_RA & "---"; -- Contains: Opcode(15 downto 9), Flags (8 downto 6), ra (5 downto 3)
 

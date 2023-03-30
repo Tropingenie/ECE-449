@@ -40,7 +40,7 @@ Port (
     --FROM THE ALU--
     n_flag     : in std_logic;                             --Negtive flag of the the test instruction issueed immidiately before the branch instruction    
     z_flag     : in std_logic;                             --Zero flag of the the test instruction issueed immidiately before the branch instruction 
-    ex_opcode  : in std_logic_vector(15 downto 0)          --execution stage opcode, used to enable the branch calculation
+    ex_opcode  : in std_logic_vector(6 downto 0)           --execution stage opcode, used to enable the branch calculation
     
     --pause_pipe : out std_logic; --pause pipse signal issued to pipe stall controller for pausing when grabbing ra                    
     );
@@ -60,8 +60,9 @@ signal reg7_out: std_logic_vector (15 downto 0);           --R7 output for BR.SU
 
 
 --TODO 
--- need to make the branch module in the conrtroller and hook it up in the processor
--- now that I am in the execution phase need to get decoder to issue data
+-- Need to figure out a way to use register arbitrarator to write to r7 for subroutine call
+-- Need to stop pipeline after BR is detected
+-- Need to test
 
 begin
     
@@ -78,8 +79,8 @@ begin
     --BRANCH CALCULATION--
     process(ex_opcode) --This process executes when the 
     begin
-    if (ex_opcode(15) = '1') then
-        case (opcode) is
+    if (ex_opcode(6) = '1') then
+        case (ex_opcode) is
         
             when "1000000" =>   --BRR op
                                 
@@ -214,9 +215,12 @@ begin
         end if;
     end process;
     
-    if(falling_edge(clk)) then --UNSURE ABOUT THIS
-            pc_out <= next_pc; --output changed or unchaged
-            r7_out <= reg7_out; --output r7
-    end if;
-       
+    process(clk)
+    begin
+        if(falling_edge(clk)) then --UNSURE ABOUT THIS
+                pc_out <= next_pc; --output changed or unchaged
+                r7_out <= reg7_out; --output r7
+        end if;
+    end process; 
+     
 end Behavioral;

@@ -18,10 +18,10 @@ entity InstructionDecoder is
 port(
     instruction     : in std_logic_vector(15 downto 0);
     opcode_out      : out std_logic_vector(6 downto 0);
-    rd_1            : out std_logic_vector(15 downto 0);   -- Address of register of first operand
-    rd_2            : out std_logic_vector(15 downto 0);   -- Address of register of second operand
+    rd_1,               -- Address of register of first operand
+    rd_2,               -- Address of register of second operand
     ra              : out std_logic_vector(2 downto 0);
-    imm             : out std_logic_vector(3 downto 0);
+    imm             : out std_logic_vector(3 downto 0)
     );
 end InstructionDecoder;
 
@@ -36,12 +36,11 @@ end component;
 
 signal opcode : std_logic_vector(6 downto 0);
 
+
 begin
 
-    opcode <= instruction(15 downto 9);
-    
-    
-    
+opcode <= instruction(15 downto 9);
+   
     process(opcode)
     begin
     	--assert false report "Instruction: " & to_hstring(instruction) severity note;
@@ -89,7 +88,7 @@ begin
                 imm  <= (others=>'0');
             when "1000111" =>                                       -- Format B2 (RETURN)
                 ra <= (others=>'0');
-                rd_1 <= (others=>'0');
+                rd_1 <= "111";                                      -- Get R7
                 rd_2 <= (others=>'0');    
                 imm  <= (others=>'0');
             when "UUUUUUU" | "XXXXXXX" =>
