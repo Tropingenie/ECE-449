@@ -18,10 +18,8 @@ entity InstructionDecoder is
 port(
     instruction     : in std_logic_vector(15 downto 0);
     opcode_out      : out std_logic_vector(6 downto 0);
-    br_instr_out    : out std_logic_vector(15 downto 0); --if theres a branch then this outputs to the BranchModule
-    rd_1,               -- Address of register of first operand
-    rd_2,               -- Address of register of second operand
-    branch_issue    : out std_logic; --issues a branch signal to the branch module
+    rd_1            : out std_logic_vector(15 downto 0);   -- Address of register of first operand
+    rd_2            : out std_logic_vector(15 downto 0);   -- Address of register of second operand
     ra              : out std_logic_vector(2 downto 0);
     imm             : out std_logic_vector(3 downto 0)
     );
@@ -49,44 +47,52 @@ begin
     	--assert false report "Instruction: " & to_hstring(instruction) severity note;
     	--assert false report "Opcode: " & to_hstring(opcode) severity note;
     	
-        if opcode(6 downto 5) = "00" then --Format A instruction, forward opcode
-            opcode_out <= opcode;
-        elsif opcode(6 downto 5) = "10" then --Format B instruction, pause pipe and go to branch module
-            opcode_out <= "0000000";
-            br_instr_out <= instruction;
-        elsif opcode(6 downto 5) = "11" then
-             --write logic for push pop load.sp and RTI instructions here 
-        end if;
+        opcode_out <= opcode;
+       
             
         case opcode is
-            when "0000000" => --Format A0 (NOP)  
+            when "0000000" =>                                       --Format A0 (NOP)  
             	assert false report "debug" severity note;
                 rd_1 <= (others=>'0');
                 rd_2 <= (others=>'0');
                 ra   <= (others=>'0');    
                 imm  <= (others=>'0');            
-            when "0000001"|"0000010"|"0000011"|"0000100" => -- Format A1 (ADD, SUB, MUL, NAND)
+            when "0000001"|"0000010"|"0000011"|"0000100" =>         -- Format A1 (ADD, SUB, MUL, NAND)
                 rd_1 <= instruction(5 downto 3);
                 rd_2 <= instruction(2 downto 0);
                 ra   <= instruction(8 downto 6);
                 imm  <= (others=>'0');
-            when "0000101"|"0000110" => -- Format A2 (SHFT R, L)
+            when "0000101"|"0000110" =>                             -- Format A2 (SHFT R, L)
                 ra   <= instruction(8 downto 6);
                 imm  <= instruction(3 downto 0);
                 rd_1 <= instruction(8 downto 6);
                 rd_2 <= (others=>'0');
-            when "0000111"|"0100000" => --Format A3 (TEST Op, Out)
+            when "0000111"|"0100000" =>                             -- Format A3 (TEST Op, Out)
                 ra   <= (others=>'0');
                 rd_1 <= instruction(8 downto 6);
                 rd_2 <= (others=>'0');
                 imm  <= (others=>'0');
-            when "0100001" => -- Format A3 (IN)
+            when "0100001" =>                                       -- Format A3 (IN)
                 ra   <= instruction(8 downto 6); 
                 rd_1 <= (others=>'0');
                 rd_2 <= (others=>'0');
                 imm  <= (others=>'0');
-            when "1000011" 
-            when "UUUUUUU" =>
+            when "1000000" | "1000001" | "1000010" =>               -- Format B1 (BRR, BRR.N, BRR.Z)                              
+                rd_1 <= (others=>'0');
+                rd_2 <= (others=>'0');
+                ra   <= (others=>'0');    
+                imm  <= (others=>'0'); 
+            when "1000011"| "1000100" | "1000101" | "1000110" =>    -- Format B2 (BR, BR.N, BR.Z, BR.SUB)
+                ra   <= instruction(8 downto 6);
+                rd_1 <= (others=>'0');
+                rd_2 <= (others=>'0');    
+                imm  <= (others=>'0');
+            when "1000111" =>                                       -- Format B2 (RETURN)
+                ra <= (others=>'0');
+                rd_1 <= (others=>'0');
+                rd_2 <= (others=>'0');    
+                imm  <= (others=>'0');
+            when "UUUUUUU" | "XXXXXXX" =>
             	assert false report "Initializing" severity note;
             when others =>
                 assert false report "Opcode operation out of range" severity failure;    
