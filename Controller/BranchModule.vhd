@@ -32,11 +32,9 @@ Port (
     
     
     --FROM REGISTER FILE--
-    reg_addr_out: out std_logic_vector(2 downto 0); -- reg address of the RETURN to be grabbed from the register file
-    r7_pc_ret  : in std_logic_vector(15 downto 0);  -- PC returned from RETURN call
-
-    r7         : in std_logic_vector(15 downto 0);  --data from r7
-    reg_data_in: in std_logic_vector(15 downto 0);  --data from register file, either R7 or R[ra]
+    r7_in      : in std_logic_vector(15 downto 0);  --data from r7
+    r7_out     : out std_logic_vector(15 downto 0); --data to be written to r7
+    reg_data_in: in std_logic_vector(15 downto 0);  --data from register file R[ra]
     
     
     --FROM THE ALU--
@@ -56,31 +54,29 @@ architecture Behavioral of BranchModule is
 signal opcode : std_logic_vector(6 downto 0);              --opcode of the branch instruction
 signal current_pc : std_logic_vector(15 downto 0);         --current PC of the branch instruction
 signal next_pc : std_logic_vector(15 downto 0);            --output PC, either branch taken or not taken will change this
-signal saved_pc : std_logic_vector (15 downto 0);          --internal storage of the PC if program banches
 signal shift_amt : integer;                                --integer value of the shift amount of the PC
 signal register_to_shift : std_logic_vector (15 downto 0); --R[ra] for immidiate branching
-
-signal branch_calc_en : std_logic;                         --signal to turn on when a branch is being calculated
+signal reg7_out: std_logic_vector (15 downto 0);           --R7 output for BR.SUB and RETURN function
 
 
 --TODO 
--- need to go into every function and add enable pc_br_overwrite and disable somewhere too
 -- need to make the branch module in the conrtroller and hook it up in the processor
--- need to finish logic for instructions 69, 70, 71
 -- now that I am in the execution phase need to get decoder to issue data
 
 begin
     
+    current_pc <= br_pc;
+    
     
     --FROM IF--
-    process(br_instr)                                           --save the branch instruction and the branch instruction PC
+    process(br_instr)                                            --save the branch instruction and the branch instruction PC
     begin
         opcode <= br_instr(15 downto 9);                         --branch instruction received from the IF
-        saved_pc <= br_pc;                                       --save the value of the PC at the branch instruction
+        current_pc <= br_pc;                                     --save the value of the PC at the branch instruction
     end process;
     
     --BRANCH CALCULATION--
-    process(ex_opcode)
+    process(ex_opcode) --This process executes when the 
     begin
     if (ex_opcode(15) = '1') then
         case (opcode) is
@@ -183,7 +179,7 @@ begin
                     assert false report "n_flag is not returned in Branch Module" severity note;
                 end if;
                 
-            when "1000101" =>       
+            when "1000101" =>  -- BR.Z Instruction
                 if (z_flag = '1') then
                     if br_instr(8) = '1' then --shift right (negative displacement value)
                         shift_amt <=  to_integer(signed(br_instr(8 downto 0)));
@@ -204,24 +200,23 @@ begin
                     assert false report "n_flag is not returned in Branch Module" severity note;
                 end if;
                 
-            when "1000110" =>
-                
-            when "1000111" =>
-                next_pc <= r7;         
-            when others =>
-                assert false report "Opcode operation out of range in Branch Module" severity failure;
-            
-                   --send opcode to register arbitrator for return
+            when "1000110" => --BR.SUB Instruction
+                reg7_out <= std_logic_vector(unsigned(current_pc) + x"0002");
+                next_pc <= reg_data_in;
                   
+            when "1000111" => --RETURN Instruction
+                next_pc <= r7_in;
+                 
+            when others =>
+                assert false report "Opcode operation out of range in Branch Module" severity failure;                  
                    
             end case;
         end if;
-        branch_calc_en <= '0';
     end process;
     
     if(falling_edge(clk)) then --UNSURE ABOUT THIS
-            pc_out <= next_pc; --output changed or unchaged 
+            pc_out <= next_pc; --output changed or unchaged
+            r7_out <= reg7_out; --output r7
     end if;
-    
-    
+       
 end Behavioral;

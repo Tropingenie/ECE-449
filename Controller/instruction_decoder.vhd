@@ -21,7 +21,7 @@ port(
     rd_1            : out std_logic_vector(15 downto 0);   -- Address of register of first operand
     rd_2            : out std_logic_vector(15 downto 0);   -- Address of register of second operand
     ra              : out std_logic_vector(2 downto 0);
-    imm             : out std_logic_vector(3 downto 0)
+    imm             : out std_logic_vector(3 downto 0);
     );
 end InstructionDecoder;
 
