@@ -8,7 +8,7 @@
 -- handshaking with instruction memory, and strobing data
 -- from instruction memory.
 --
--- Benjamin Lyne
+-- Benjamin Lyne, Kai Herrero
 --
 -----------------------------------------------------------
 
@@ -18,37 +18,61 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity InstructionFetcher is
 port(
-    clk, rst : in std_logic;
-    PC : out std_logic_vector(15 downto 0) -- Instruction output and memory address issuing respectively
+    --System Signals
+    clk, rst        : in std_logic;                           -- clock at twice the rate of the datapath, PC gets double clk to strobe properly
+    
+    --PC Register Input and Output
+    PC_IN           : in std_logic_vector(15 downto 0);       -- Input value from PC register
+    PC_OUT          : out std_logic_vector(15 downto 0);      -- Output value to the PC register
+    
+    --Memory Input and Output
+    M_INSTR         : in std_logic_vector(15 downto 0);       -- Input from memory
+    INSTR, M_ADDR   : out std_logic_vector(15 downto 0);      -- Instruction output and memory address issuing respectively
+    
+    --Branch Output Signals
+    BR_INSTR        : out std_logic_vector(15 downto 0);      -- Branch instruction opcode value
+    BR_PC           : out std_logic_vector(15 downto 0);      -- Branch instruction PC value
+    BR_CALC_EN      : in std_logic;                           -- Branch calculation enable, this is on when a branch is being determined
+    PC_OVERWRITE_VAL: in std_logic_vector (15 downto 0);      -- Branch module PC value to be written to PC
+    PC_OVERWRITE_EN : in std_logic                            -- Branch module PC overwrite enable
 );
 end InstructionFetcher;
 
 architecture Behaviour of InstructionFetcher is
 
-component theregister is
-port(
-    clk, rst : in std_logic;
-    d_in : in std_logic_vector(15 downto 0);
-    d_out : out std_logic_vector(15 downto 0));
-end component;
-
-signal current_pc, next_pc : std_logic_vector(15 downto 0) := (others => '0');
+signal old_pc, new_pc : std_logic_vector(15 downto 0);
 
 begin
 
-    REG_PC : theregister port map (clk=>clk, rst=>rst, d_in => next_pc, d_out => current_pc);
-    process(clk, rst)
+    INSTR <= M_INSTR;                                                 -- Just pass through. This module is only a controller
+    
+    
+    process(clk,rst)
     begin
-        if rst = '1' or next_pc = "UUUUUUUUUUUUUUUU" then
-            PC <= (others=>'0');
-        elsif RISING_EDGE(clk) then
-            --if bubble = '1' then
-                next_pc <= current_pc;
-            --else
-                next_pc <= std_logic_vector(unsigned(current_pc) + x"0002");
-            --end if;
-            PC <= current_pc;
-        end if;
+        
+        if rst = '1' or new_pc = "UUUUUUUUUUUUUUUU" then                            -- Handle reset or uninitialized values
+            old_pc <= (others=>'0');
+            new_pc <= (others=>'0');
+            
+        elsif RISING_EDGE(clk) then                                     -- Update PC for the instruction received on the falling edge of t
+            old_pc <= PC_IN;
+            if(br_calc_en = '0')then
+            new_pc <= std_logic_vector(unsigned(old_pc) + x"0002"); 
+            end if;
+            
+            if M_INSTR(15) = '1' then                                   -- Check for branch op in current instr on rising clock
+               BR_INSTR <= M_INSTR(15 downto 0);
+               BR_PC   <= new_pc;
+            end if;
+            
+            if ( PC_OVERWRITE_EN = '1' ) then                           --Branch enable pc overwrite
+                PC_OUT <= PC_OVERWRITE_VAL;
+                M_ADDR <= std_logic_vector(unsigned(PC_OVERWRITE_VAL) + x"0002");
+            
+            else
+                PC_OUT <= new_pc;                                        -- Update the PC with the current PC value
+                M_ADDR <= std_logic_vector(unsigned(new_pc) + x"0002");  -- Ask Memory for the next instruction after the new one that just came in
+            end if;  
+        end if; 
     end process;
-
 end Behaviour;

@@ -11,7 +11,6 @@
 
 library IEEE;
 Library xpm;
-use xpm.vcomponents.all;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
@@ -37,9 +36,19 @@ port(
     data_mem_sel : out STD_LOGIC; -- 1 when reading from data memory, 0 when passing AR from ALU/writing to memory
     instr_mem_sel : out STD_LOGIC; -- 1 when using RAM, 0 when using ROM
     io_sel : out STD_LOGIC; -- 1 when using IO, 0 when using memory
-    ram_ena, ram_enb, we : out std_logic; 
     MEMWB_CONTROL_BITS_OUT : in std_logic_vector(15 downto 0);
     ID_rd_1, ID_rd_2, ID_wr, WB_wr  : in std_logic_vector(2 downto 0)
+    br_pc      : in std_logic_vector(15 downto 0);  --Value of the PC of the branch instruction that is saved if the branch is taken
+    br_instr   : in std_logic_vector(15 downto 0);  --The branch instrcution given to the BranchModule
+    pc_out     : out std_logic_vector(15 downto 0); --PC output, either
+    pc_br_overwrite : out std_logic;                --PC overwrite enable if branch is taken
+    br_calc_en : out std_logic;
+    r7_in      : in std_logic_vector(15 downto 0);  --data from r7
+    r7_out     : out std_logic_vector(15 downto 0); --data to be written to r7
+    reg_data_in: in std_logic_vector(15 downto 0);  --data from register file R[ra]
+    n_flag     : in std_logic;                             --Negtive flag of the the test instruction issueed immidiately before the branch instruction    
+    z_flag     : in std_logic;                             --Zero flag of the the test instruction issueed immidiately before the branch instruction 
+    ram_ena, ram_enb, we : out std_logic 
 );
 end component;
 
@@ -52,8 +61,16 @@ end component;
 
 component InstructionFetcher is
 port(
-    clk, rst : in std_logic; -- clock at twice the rate of the datapath, PC gets double clk to strobe properly
-    PC : out std_logic_vector(15 downto 0) -- Instruction output and memory address issuing respectively
+    clk, rst        : in std_logic;                           
+    PC_IN           : in std_logic_vector(15 downto 0);         
+    PC_OUT          : out std_logic_vector(15 downto 0);        
+    M_INSTR         : in std_logic_vector(15 downto 0);        
+    INSTR, M_ADDR   : out std_logic_vector(15 downto 0); 
+    BR_INSTR        : out std_logic_vector(15 downto 0);        
+    BR_PC           : out std_logic_vector(15 downto 0);
+    BR_CALC_EN      : in std_logic;
+    PC_OVERWRITE_VAL: in std_logic_vector (15 downto 0);      
+    PC_OVERWRITE_EN : in std_logic                                    
 );
 end component;
 
@@ -96,19 +113,28 @@ port(
 );
 end component;
 
-signal IFID_clk, IDEX_clk, EXMEM_clk, MEMWB_clk : std_logic := '0'; -- various clock signals that can be enabled or disabled
-signal stall_en                         : std_logic_vector(3 downto 0); -- Stalls according to the set bit position 0=IFID, 1=IDEX, 2=EXMEM, 3=MEMWB
+signal IFID_clk, IDEX_clk, 
+       EXMEM_clk, MEMWB_clk             : std_logic := '0';              -- various clock signals that can be enabled or disabled
+signal stall_en                         : std_logic_vector(3 downto 0);  -- Stalls according to the set bit position 0=IFID, 1=IDEX, 2=EXMEM, 3=MEMWB
+signal current_pc, next_pc              : std_logic_vector(15 downto 0); -- PC register current and next PC values
+signal pc_overwrite_en                  : std_logic;                     -- Allows the branch module to update the PC
 signal IF_INSTR, ID_INSTR               : std_logic_vector(15 downto 0); -- Instruction from various stages
+signal IF_PC_IN                         : std_logic_vector(15 downto 0); -- Instruction fetcher PC in from PC register
+signal IF_PC_OUT                        : std_logic_vector(15 downto 0); -- PC register in from Instruction fetch
+signal IF_BR_PC                         : std_logic_vector(15 downto 0); -- Instruction fetcher to branch module branch PC
+signal IF_BR_INSTR                      : std_logic_vector(15 downto 0); -- Instruction fetcher to branch module branch instruction
+signal BM_PC_OVERWRITE                  : std_logic_vector(15 downto 0); -- New PC value from branch calculation to overwrite PC register value
+signal BM_BR_EN                         : std_logic;                     -- Branch calculation enable, this is on when a branch is being determined
 signal ID_opcode, EX_opcode, 
-    MEM_opcode, WB_opcode               : std_logic_vector(6 downto 0); -- opcode during various stages
+    MEM_opcode, WB_opcode               : std_logic_vector(6 downto 0);  -- opcode during various stages
 signal ID_ra, ID_rb, ID_rc, 
-    EX_ra, MEM_ra, WB_ra                : std_logic_vector(2 downto 0); -- Register addresses in various stages
-signal ID_imm                           : std_logic_vector(3 downto 0); -- Immediate value decoded in the ID stage
-signal ID_WRITE_EN                      : std_logic; -- Register file write enable (for writeback)
+    EX_ra, MEM_ra, WB_ra                : std_logic_vector(2 downto 0);  -- Register addresses in various stages
+signal ID_imm                           : std_logic_vector(3 downto 0);  -- Immediate value decoded in the ID stage
+signal ID_WRITE_EN                      : std_logic;                     -- Register file write enable (for writeback)
 signal EX_AR, MEM_AR                    : std_logic_vector(15 downto 0); -- AR in various stages
 signal ID_data1, ID_data2, EX_data1, 
     EX_data2                            : std_logic_vector(15 downto 0); -- Data from register file for various stages
-signal ID_RSEL                          : std_logic_vector(2 downto 0); -- Selected address of register arbitrator
+signal ID_RSEL                          : std_logic_vector(2 downto 0);  -- Selected address of register arbitrator
 signal ID_RC_DATA                       : std_logic_vector(15 downto 0); -- Intermediate signal for holding contents of RC while selecting if data is from registers or an immediate
 signal IDEX_CONTROL_BITS_IN, 
     IDEX_CONTROL_BITS_OUT, 
@@ -123,6 +149,7 @@ signal WB_DATA                          : std_logic_vector(15 downto 0); -- Data
 --signal bubble                           : std_logic; -- Signal to indicate to IF to introduce a bubble
 signal data_mem_sel, instr_mem_sel, io_sel : std_logic; -- Signals to control during memory access
 
+signal SUBROUTINE_R7_WRITEBACK: std_logic_vector(15 downto 0); --branch subroutine r7 writeback value
 begin
 
 -- Controller
@@ -130,9 +157,11 @@ begin
 MAINCONT    :   controller port map(clk=>clk, pipe_clk=>EXMEM_clk, rst=>rst, ID_opcode=>ID_opcode, EX_opcode=>EX_opcode, 
                                     MEM_opcode=>MEM_opcode, WB_opcode=>WB_opcode, ID_WRITE_EN=>ID_WRITE_EN,
                                     stall_en=>stall_en, data_mem_sel=>data_mem_sel, 
-                                    instr_mem_sel=>instr_mem_sel, io_sel=>io_sel, ram_ena=>ram_ena,
-                                    ram_enb=>ram_enb, we=>ram_we, MEMWB_CONTROL_BITS_OUT=>MEMWB_CONTROL_BITS_IN,
+                                    instr_mem_sel=>instr_mem_sel, io_sel=>io_sel, MEMWB_CONTROL_BITS_OUT=>MEMWB_CONTROL_BITS_IN,
                                     ID_rd_1=>ID_rb, ID_rd_2=>ID_rc, ID_wr=>ID_ra, WB_wr=>WB_ra);
+                                    ram_enb=>ram_enb, we=>ram_we, br_pc => IF_BR_PC, br_instr => IF_BR_INSTR, pc_out => BM_PC_OVERWRITE,
+                                    pc_br_overwrite => pc_overwrite_en,r7_in => EX_DATA1, r7_out => SUBROUTINE_R7_WRITEBACK,
+                                    reg_data_in => EX_DATA2, n_flag => EX_FLAGS(1), z_flag => EX_FLAGS(2), br_calc_en => BM_BR_EN);
                                    
 
 -- -- Stalls according to the set bit position 0=IFID, 1=IDEX, 2=EXMEM, 3=MEMWB                                    
@@ -141,23 +170,30 @@ IDEX_clk <= clk when stall_en(1) = '0' else '0';
 EXMEM_clk <= clk when stall_en(2) = '0' else '0';
 MEMWB_clk <= clk when stall_en(3) = '0' else '0';
 
+--PC Register
 --==============================================================================
+PC : theregister port map (clk=>IFID_CLK, d_in => IF_PC_OUT, d_out => IF_PC_IN, rst=>rst);
 --==============================================================================
 
 -- Start of the pipeline
 --==============================================================================
 -- Instruction Fetch
 
-I_FETCH :     InstructionFetcher port map(clk=>IFID_clk, rst=>rst, PC=>RAM_ADDR_B);
-IF_INSTR <= RAM_FROM_B;
-R_IFID  :     theregister        port map(clk=>IFID_clk, rst=>rst, d_in=>IF_INSTR, d_out=>ID_INSTR); -- IF/ID stage register
+--IF_INSTR <= DEBUG_INSTR_IN;
+I_FETCH :     InstructionFetcher port map(M_INSTR=>RAM_FROM_B, clk=>IFID_CLK, INSTR=>IF_INSTR, M_ADDR=>RAM_ADDR_B, 
+                                          rst=>rst, pc_in=>IF_PC_IN, pc_out=>IF_PC_OUT, br_instr => IF_BR_INSTR,
+                                          br_pc => IF_BR_PC, bubble=>bubble,PC_OVERWRITE_EN => pc_overwrite_en,
+                                          PC_OVERWRITE_VAL => BM_PC_OVERWRITE, BR_CALC_EN => BM_BR_EN);           
 
+RAM_ADDR_B <= IF_PC_OUT;
+
+R_IFID  :     theregister        port map(clk=>IFID_clk, rst=>rst, d_in=>IF_INSTR, d_out=>ID_INSTR); -- IF/ID stage register                                       
 --==============================================================================
 -- Instruction Decode
 
 I_DECODE:     InstructionDecoder port map(instruction=>ID_INSTR, opcode_out=>ID_opcode, 
                                           rd_1=>ID_rb, rd_2=>ID_rc, ra=>ID_ra, imm=>ID_imm);
-
+                                     
 REG_FILE:     register_file      port map(clk=>clk, rst=>rst, rd_index1=>ID_rb, 
                                           rd_index2=>ID_rsel, rd_data1=>ID_data1, 
                                           rd_data2=>ID_RC_DATA, wr_index=>WB_ra, 
@@ -185,7 +221,7 @@ EX_ra <= IDEX_CONTROL_BITS_OUT(8 downto 6);
 theALU: ALU port map(in1=>EX_DATA1, in2=>EX_DATA2, op_code=>EX_opcode, clk=>clk, 
                      rst=>rst, result=> EX_AR, Z_flag=>EX_flags(2), N_flag=>EX_flags(1), 
                      O_Flag=>EX_flags(0));
-
+                    
 -- Concatenate control bits for input to register                     
 EXMEM_CONTROL_BITS_IN <= EX_OPCODE & EX_FLAGS & EX_RA & "---"; -- Contains: Opcode(15 downto 9), Flags (8 downto 6), ra (5 downto 3)
 

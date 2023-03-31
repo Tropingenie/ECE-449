@@ -21,9 +21,19 @@ entity controller is
         data_mem_sel : out STD_LOGIC; -- 1 when reading from data memory, 0 when passing AR from ALU/writing to memory
         instr_mem_sel : out STD_LOGIC; -- 1 when using RAM, 0 when using ROM
         io_sel : out STD_LOGIC; -- 1 when using IO, 0 when using memory
-        ram_ena, ram_enb, we : out std_logic; 
         MEMWB_CONTROL_BITS_OUT : in std_logic_vector(15 downto 0);
         ID_rd_1, ID_rd_2, ID_wr, WB_wr  : in std_logic_vector(2 downto 0)
+        br_pc      : in std_logic_vector(15 downto 0);  --Value of the PC of the branch instruction that is saved if the branch is taken
+        br_instr   : in std_logic_vector(15 downto 0);  --The branch instrcution given to the BranchModule
+        br_calc_en : out std_logic;                     --To pause the IF when a branch is being calculated
+        pc_out     : out std_logic_vector(15 downto 0); --PC output, either
+        pc_br_overwrite : out std_logic;                --PC overwrite enable if branch is taken
+        r7_in      : in std_logic_vector(15 downto 0);  --data from r7
+        r7_out     : out std_logic_vector(15 downto 0); --data to be written to r7
+        reg_data_in: in std_logic_vector(15 downto 0);  --data from register file R[ra]
+        n_flag     : in std_logic;                             --Negtive flag of the the test instruction issueed immidiately before the branch instruction    
+        z_flag     : in std_logic;                             --Zero flag of the the test instruction issueed immidiately before the branch instruction 
+        ram_ena, ram_enb, we : out std_logic 
     );
 end controller;
 
@@ -63,6 +73,24 @@ component MemoryArbiter is
        ); 
 end component;
 
+component BranchModule is
+Port (
+    clk, rst   : in std_logic;                      --synchronized checking and writing with the IF
+    br_pc      : in std_logic_vector(15 downto 0);  --Value of the PC of the branch instruction that is saved if the branch is taken
+    br_instr   : in std_logic_vector(15 downto 0);  --The branch instrcution given to the BranchModule
+    pc_out     : out std_logic_vector(15 downto 0); --PC output, either
+    pc_br_overwrite : out std_logic;                --PC overwrite enable if branch is taken
+    br_calc_en : out std_logic;
+    r7_in      : in std_logic_vector(15 downto 0);  --data from r7
+    r7_out     : out std_logic_vector(15 downto 0); --data to be written to r7
+    reg_data_in: in std_logic_vector(15 downto 0);  --data from register file R[ra]
+    n_flag     : in std_logic;                             --Negtive flag of the the test instruction issueed immidiately before the branch instruction    
+    z_flag     : in std_logic;                             --Zero flag of the the test instruction issueed immidiately before the branch instruction 
+    ex_opcode  : in std_logic_vector(6 downto 0)           --execution stage opcode, used to enable the branch calculation
+    --pause_pipe : out std_logic; --pause pipse signal issued to pipe stall controller for pausing when grabbing ra                    
+    );
+end component;
+
 signal stall_stage : std_logic_vector(3 downto 0) := (others => '0');
 signal ALU_STALL, REG_STALL, written : std_logic := '0';
 signal last_wb_bits, delay_wb_bits, current_wb_bits : std_logic_vector(15 downto 0);
@@ -79,6 +107,7 @@ ALUPR : ALUPipelineRetarder port map(clk=>clk, rst=>rst, ID_OPCODE=>ID_OPCODE, a
 MEM_ARB : MemoryArbiter port map(mem_opcode=>mem_opcode, data_mem_sel=>data_mem_sel, 
                                  instr_mem_sel=>instr_mem_sel, io_sel=>io_sel, ram_ena=>ram_ena, 
                                  ram_enb=>ram_enb, we=>we);
+BR_MOD : BranchModule port map(clk=>clk, rst=>rst, br_pc => br_pc, br_instr =>br_instr, pc_out =>pc_out, pc_br_overwrite => pc_br_overwrite, r7_in => r7_in, r7_out => r7_out, reg_data_in =>reg_data_in, n_flag => n_flag, z_flag => z_flag, ex_opcode => ex_opcode, br_calc_en => br_calc_en);
 
 -- Writeback stalling
  stall_stage(1) <= REG_STALL;

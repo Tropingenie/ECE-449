@@ -46,6 +46,7 @@ begin
     begin    
     if (rst = '1') then
     result <= (others => '0');
+    --Reset Values
     z_flag <= '0';
     n_flag <= '0';
     o_flag <= '0';
@@ -54,62 +55,81 @@ begin
     elsif(RISING_EDGE(clk)) then
         case op_code is 
         
-            when "0000000" =>                    --NOP
+            when "0000000" =>                               --NOP
                 data3 <= (others => '0');        
                 
-            when "0000001" =>                    --ADD op
+            when "0000001" =>                               --ADD op (OVERFLOW NOT CONSIDERED)
                 if (data2 + data1) = 0 then
                     data3 <= data1 + data2;
-                    o_flag <= '1';
+                    z_flag <= '1';
                 else
-                    data3 <= data1 + data2;                     
+                    if to_integer(signed(data3)) < 0 then   --check for negative result from an ADD
+                        n_flag <= '1';
+                    else
+                        n_flag <= '0';
+                        z_flag <= '0';
+                    end if;
+                    
+                    data3 <= data1 + data2;
+                    o_flag <= '0';
+                                       
                 end if;
                 
-            when "0000010" =>                    --SUB op
+            when "0000010" =>                               --SUB op (UNDERFLOW NOT CONSIDERED)
                 if( to_integer(signed(data2)) > to_integer(signed(data1)) ) then
                     n_flag <= '1';
                 elsif( to_integer(signed(data1)) - to_integer(signed(data2)) = 0 ) then
-                    o_flag <= '1';
+                    z_flag <= '1';
                 else
                     data3 <= data1 - data2;
+                    n_flag <= '0';
+                    z_flag <= '0';
+                    
                 end if;                   
                 
-            when "0000011" =>                    --MULT op
+            when "0000011" =>                               --MULT op (No negative operands)
                 if( (to_integer(signed(data1))) * (to_integer(signed(data2))) > integer(65536)) then
                     o_flag <= '1';
                 elsif( to_integer(signed(data1)) * to_integer(signed(data2)) = 0) then
                     z_flag <= '1';
+                    data3 <= X"0000";
                 elsif (to_integer(signed(data1)) < 0)then
                     n_flag <= '1';
                 elsif (to_integer(signed(data2)) < 0) then
                     n_flag <= '1';
                 else
                     mult_ofr <= data1 * data2;
-                    data3 <= mult_ofr(15 downto 0);                     
+                    data3 <= mult_ofr(15 downto 0);
+                    n_flag <= '0';
+                    z_flag <= '0';
+                    o_flag <= '0';                    
                 end if;
               
-            when "0000100" =>                    --NAND op
+            when "0000100" =>                               --NAND op
                 data3 <= data1 NAND data2;       
                 
-            when "0000101" =>                   --SHFT R op
+            when "0000101" =>                               --SHFT R op
                 shift_amt <= to_integer(unsigned(in2(3 downto 0)));
                 data3 <= SHIFT_LEFT(data1, shift_amt);      --currently sign extends for 2's complement
                 
-            when "0000110" =>                    --SHFT L op
+            when "0000110" =>                               --SHFT L op
                 shift_amt <= to_integer(unsigned(in2(3 downto 0)));
                 data3 <= SHIFT_RIGHT(data1, shift_amt);     --currently sign extends
                 
-            when "0000111" =>                    --TEST Op
+            when "0000111" =>                               --TEST Op
                 if (data1 = b"0000000000000000") then
                     z_flag <= '1';
                 elsif data1(15) = '1' then
                     n_flag <= '1';
+                else
+                    z_flag <= '0';
+                    n_flag <= '0';
                 end if;
 
-            when "0100000" =>                    --OUT Op
+            when "0100000" =>                               --OUT Op
             data3 <= data1;
 
-            when "0100001" =>                    --IN Op
+            when "0100001" =>                               --IN Op
             --???
                 
             when "UUUUUUU" | "XXXXXXX" =>

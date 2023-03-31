@@ -33,6 +33,7 @@ architecture behavioural of register_file is
         for i in 0 to 7 loop
         reg_file(i)<= (others => '0');
         end loop;
+        
     elsif(wr_enable='1') then
         case wr_index(2 downto 0) is
             when "000" => reg_file(0) <= wr_data;
