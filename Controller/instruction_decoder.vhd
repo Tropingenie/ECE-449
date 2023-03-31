@@ -94,21 +94,21 @@ begin
 --                rd_1 <= (others=>'-');
 --                rd_2 <= (others=>'-');
 --                imm  <= (others=>'-');
-            when "1000000" | "1000001" | "1000010" =>               -- Format B1 (BRR, BRR.N, BRR.Z)                              
-                            rd_1 <= (others=>'0');
-                            rd_2 <= (others=>'0');
-                            ra   <= (others=>'0');    
-                            imm  <= (others=>'0'); 
-                        when "1000011"| "1000100" | "1000101" | "1000110" =>    -- Format B2 (BR, BR.N, BR.Z, BR.SUB)
-                            ra   <= instruction(8 downto 6);
-                            rd_1 <= (others=>'0');
-                            rd_2 <= (others=>'0');    
-                            imm  <= (others=>'0');
-                        when "1000111" =>                                       -- Format B2 (RETURN)
-                            ra <= (others=>'0');
-                            rd_1 <= "111";                                      -- Get R7
-                            rd_2 <= (others=>'0');    
-                            imm  <= (others=>'0'); 
+--            when "1000000" | "1000001" | "1000010" =>               -- Format B1 (BRR, BRR.N, BRR.Z)                              
+--                            rd_1 <= (others=>'0');
+--                            rd_2 <= (others=>'0');
+--                            ra   <= (others=>'0');    
+--                            imm  <= (others=>'0'); 
+--                        when "1000011"| "1000100" | "1000101" | "1000110" =>    -- Format B2 (BR, BR.N, BR.Z, BR.SUB)
+--                            ra   <= instruction(8 downto 6);
+--                            rd_1 <= (others=>'0');
+--                            rd_2 <= (others=>'0');    
+--                            imm  <= (others=>'0');
+--                        when "1000111" =>                                       -- Format B2 (RETURN)
+--                            ra <= (others=>'0');
+--                            rd_1 <= "111";                                      -- Get R7
+--                            rd_2 <= (others=>'0');    
+--                            imm  <= (others=>'0'); 
 --            when "UUUUUUU" =>
 --            	assert false report "Initializing" severity note;
 --            when others =>

@@ -37,7 +37,7 @@ port(
     instr_mem_sel : out STD_LOGIC; -- 1 when using RAM, 0 when using ROM
     io_sel : out STD_LOGIC; -- 1 when using IO, 0 when using memory
     MEMWB_CONTROL_BITS_OUT : in std_logic_vector(15 downto 0);
-    ID_rd_1, ID_rd_2, ID_wr, WB_wr  : in std_logic_vector(2 downto 0)
+    ID_rd_1, ID_rd_2, ID_wr, WB_wr  : in std_logic_vector(2 downto 0);
     br_pc      : in std_logic_vector(15 downto 0);  --Value of the PC of the branch instruction that is saved if the branch is taken
     br_instr   : in std_logic_vector(15 downto 0);  --The branch instrcution given to the BranchModule
     pc_out     : out std_logic_vector(15 downto 0); --PC output, either
@@ -158,7 +158,7 @@ MAINCONT    :   controller port map(clk=>clk, pipe_clk=>EXMEM_clk, rst=>rst, ID_
                                     MEM_opcode=>MEM_opcode, WB_opcode=>WB_opcode, ID_WRITE_EN=>ID_WRITE_EN,
                                     stall_en=>stall_en, data_mem_sel=>data_mem_sel, 
                                     instr_mem_sel=>instr_mem_sel, io_sel=>io_sel, MEMWB_CONTROL_BITS_OUT=>MEMWB_CONTROL_BITS_IN,
-                                    ID_rd_1=>ID_rb, ID_rd_2=>ID_rc, ID_wr=>ID_ra, WB_wr=>WB_ra);
+                                    ID_rd_1=>ID_rb, ID_rd_2=>ID_rc, ID_wr=>ID_ra, WB_wr=>WB_ra,
                                     ram_enb=>ram_enb, we=>ram_we, br_pc => IF_BR_PC, br_instr => IF_BR_INSTR, pc_out => BM_PC_OVERWRITE,
                                     pc_br_overwrite => pc_overwrite_en,r7_in => EX_DATA1, r7_out => SUBROUTINE_R7_WRITEBACK,
                                     reg_data_in => EX_DATA2, n_flag => EX_FLAGS(1), z_flag => EX_FLAGS(2), br_calc_en => BM_BR_EN);
@@ -182,10 +182,10 @@ PC : theregister port map (clk=>IFID_CLK, d_in => IF_PC_OUT, d_out => IF_PC_IN, 
 --IF_INSTR <= DEBUG_INSTR_IN;
 I_FETCH :     InstructionFetcher port map(M_INSTR=>RAM_FROM_B, clk=>IFID_CLK, INSTR=>IF_INSTR, M_ADDR=>RAM_ADDR_B, 
                                           rst=>rst, pc_in=>IF_PC_IN, pc_out=>IF_PC_OUT, br_instr => IF_BR_INSTR,
-                                          br_pc => IF_BR_PC, bubble=>bubble,PC_OVERWRITE_EN => pc_overwrite_en,
+                                          br_pc => IF_BR_PC, PC_OVERWRITE_EN => pc_overwrite_en,
                                           PC_OVERWRITE_VAL => BM_PC_OVERWRITE, BR_CALC_EN => BM_BR_EN);           
 
-RAM_ADDR_B <= IF_PC_OUT;
+--RAM_ADDR_B <= M_ADDR;
 
 R_IFID  :     theregister        port map(clk=>IFID_clk, rst=>rst, d_in=>IF_INSTR, d_out=>ID_INSTR); -- IF/ID stage register                                       
 --==============================================================================

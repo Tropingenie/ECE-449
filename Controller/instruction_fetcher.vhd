@@ -56,9 +56,9 @@ begin
             
         elsif RISING_EDGE(clk) then                                     -- Update PC for the instruction received on the falling edge of t
             old_pc <= PC_IN;
-            if(br_calc_en = '0')then
+            --if(br_calc_en = '0')then
             new_pc <= std_logic_vector(unsigned(old_pc) + x"0002"); 
-            end if;
+            --end if;
             
             if M_INSTR(15) = '1' then                                   -- Check for branch op in current instr on rising clock
                BR_INSTR <= M_INSTR(15 downto 0);
@@ -71,7 +71,7 @@ begin
             
             else
                 PC_OUT <= new_pc;                                        -- Update the PC with the current PC value
-                M_ADDR <= std_logic_vector(unsigned(new_pc) + x"0002");  -- Ask Memory for the next instruction after the new one that just came in
+                M_ADDR <= std_logic_vector(unsigned(old_pc));  -- Ask Memory for the current instruction
             end if;  
         end if; 
     end process;

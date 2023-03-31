@@ -27,6 +27,7 @@ architecture Behavioral of RegisterArbitrator is
     type reg_array is array (integer range 0 to 7) of std_logic;
     signal reg_checkout : reg_array;
     signal read_1, read_2, ID_write, WB_write, check_in : integer;
+    signal last_instr, current_instr : std_logic_vector(15 downto 0);
 
 begin
     read_1   <= to_integer(unsigned(ID_rd_1));
@@ -43,11 +44,13 @@ begin
             end loop;
            stall_IDEX <= '0'; 
         end if;
+            last_instr <= current_instr;
+            current_instr <= ID_opcode & ID_rd_1 & ID_rd_2 & ID_wr;
            
             -- Stall pipeline when trying to read from a checked out register, and check out the writeback register when proceeding
             case(ID_opcode) is
                 when "0000001" | "0000010" | "0000011" | "0000100" | "0000101" | "0000110" | "0100000" | "0100001"=> -- Format A that use registers
-                    if reg_checkout(read_1) = '1' or reg_checkout(read_2) = '1' then
+                    if (reg_checkout(read_1) = '1' or reg_checkout(read_2) = '1') and not (current_instr = last_instr) then
                         stall_IDEX <= '1';
                     else
                         if not(ID_opcode = "0100000") then

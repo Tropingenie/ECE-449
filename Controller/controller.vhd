@@ -22,7 +22,7 @@ entity controller is
         instr_mem_sel : out STD_LOGIC; -- 1 when using RAM, 0 when using ROM
         io_sel : out STD_LOGIC; -- 1 when using IO, 0 when using memory
         MEMWB_CONTROL_BITS_OUT : in std_logic_vector(15 downto 0);
-        ID_rd_1, ID_rd_2, ID_wr, WB_wr  : in std_logic_vector(2 downto 0)
+        ID_rd_1, ID_rd_2, ID_wr, WB_wr  : in std_logic_vector(2 downto 0);
         br_pc      : in std_logic_vector(15 downto 0);  --Value of the PC of the branch instruction that is saved if the branch is taken
         br_instr   : in std_logic_vector(15 downto 0);  --The branch instrcution given to the BranchModule
         br_calc_en : out std_logic;                     --To pause the IF when a branch is being calculated
