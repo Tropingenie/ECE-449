@@ -22,16 +22,17 @@ Port (
     --Clock, Reset--
     clk, rst   : in std_logic;                      --synchronized checking and writing with the IF
     
-    --FROM THE INSTRUCTION FETCHER--
+    --FROM/TO THE INSTRUCTION FETCHER--
     br_pc      : in std_logic_vector(15 downto 0);  --Value of the PC of the branch instruction that is saved if the branch is taken
     br_instr   : in std_logic_vector(15 downto 0);  --The branch instrcution given to the BranchModule
+    br_calc_en : out std_logic;                     --Pauses the incrementation of the PC if the branch is being calculated
     
-    --FROM THE PC REGISTER--
+    --TO THE PC REGISTER--
     pc_out     : out std_logic_vector(15 downto 0); --PC output, either
     pc_br_overwrite : out std_logic;                --PC overwrite enable if branch is taken
     
     
-    --FROM REGISTER FILE--
+    --FROM/TO REGISTER FILE--
     r7_in      : in std_logic_vector(15 downto 0);  --data from r7
     r7_out     : out std_logic_vector(15 downto 0); --data to be written to r7
     reg_data_in: in std_logic_vector(15 downto 0);  --data from register file R[ra]
@@ -74,6 +75,7 @@ begin
     begin
         opcode <= br_instr(15 downto 9);                         --branch instruction received from the IF
         current_pc <= br_pc;                                     --save the value of the PC at the branch instruction
+        br_calc_en <= '1';                                       -- stop the IF from incrementing the PC
     end process;
     
     --BRANCH CALCULATION--

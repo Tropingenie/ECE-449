@@ -23,6 +23,7 @@ entity controller is
         io_sel : out STD_LOGIC; -- 1 when using IO, 0 when using memory
         br_pc      : in std_logic_vector(15 downto 0);  --Value of the PC of the branch instruction that is saved if the branch is taken
         br_instr   : in std_logic_vector(15 downto 0);  --The branch instrcution given to the BranchModule
+        br_calc_en : out std_logic;                     --To pause the IF when a branch is being calculated
         pc_out     : out std_logic_vector(15 downto 0); --PC output, either
         pc_br_overwrite : out std_logic;                --PC overwrite enable if branch is taken
         r7_in      : in std_logic_vector(15 downto 0);  --data from r7
@@ -76,6 +77,7 @@ Port (
     br_instr   : in std_logic_vector(15 downto 0);  --The branch instrcution given to the BranchModule
     pc_out     : out std_logic_vector(15 downto 0); --PC output, either
     pc_br_overwrite : out std_logic;                --PC overwrite enable if branch is taken
+    br_calc_en : out std_logic;
     r7_in      : in std_logic_vector(15 downto 0);  --data from r7
     r7_out     : out std_logic_vector(15 downto 0); --data to be written to r7
     reg_data_in: in std_logic_vector(15 downto 0);  --data from register file R[ra]
@@ -100,7 +102,7 @@ ALUPR : ALUPipelineRetarder port map(clk=>clk, rst=>rst, ID_OPCODE=>ID_OPCODE, a
 MEM_ARB : MemoryArbiter port map(mem_opcode=>mem_opcode, data_mem_sel=>data_mem_sel, 
                                  instr_mem_sel=>instr_mem_sel, io_sel=>io_sel, ram_ena=>ram_ena, 
                                  ram_enb=>ram_enb, we=>we);
-BR_MOD : BranchModule port map(clk=>clk, rst=>rst, br_pc => br_pc, br_instr =>br_instr, pc_out =>pc_out, pc_br_overwrite => pc_br_overwrite, r7_in => r7_in, r7_out => r7_out, reg_data_in =>reg_data_in, n_flag => n_flag, z_flag => z_flag, ex_opcode => ex_opcode);
+BR_MOD : BranchModule port map(clk=>clk, rst=>rst, br_pc => br_pc, br_instr =>br_instr, pc_out =>pc_out, pc_br_overwrite => pc_br_overwrite, r7_in => r7_in, r7_out => r7_out, reg_data_in =>reg_data_in, n_flag => n_flag, z_flag => z_flag, ex_opcode => ex_opcode, br_calc_en => br_calc_en);
 
 process(clk, rst) begin
     if rst = '1' then

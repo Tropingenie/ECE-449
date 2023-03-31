@@ -40,6 +40,7 @@ port(
     br_instr   : in std_logic_vector(15 downto 0);  --The branch instrcution given to the BranchModule
     pc_out     : out std_logic_vector(15 downto 0); --PC output, either
     pc_br_overwrite : out std_logic;                --PC overwrite enable if branch is taken
+    br_calc_en : out std_logic;
     r7_in      : in std_logic_vector(15 downto 0);  --data from r7
     r7_out     : out std_logic_vector(15 downto 0); --data to be written to r7
     reg_data_in: in std_logic_vector(15 downto 0);  --data from register file R[ra]
@@ -64,7 +65,10 @@ port(
     M_INSTR         : in std_logic_vector(15 downto 0);        
     INSTR, M_ADDR   : out std_logic_vector(15 downto 0); 
     BR_INSTR        : out std_logic_vector(15 downto 0);        
-    BR_PC           : out std_logic_vector(15 downto 0)        
+    BR_PC           : out std_logic_vector(15 downto 0);
+    BR_CALC_EN      : in std_logic;
+    PC_OVERWRITE_VAL: in std_logic_vector (15 downto 0);      
+    PC_OVERWRITE_EN : in std_logic                                    
 );
 end component;
 
@@ -118,6 +122,7 @@ signal IF_PC_OUT                        : std_logic_vector(15 downto 0); -- PC r
 signal IF_BR_PC                         : std_logic_vector(15 downto 0); -- Instruction fetcher to branch module branch PC
 signal IF_BR_INSTR                      : std_logic_vector(15 downto 0); -- Instruction fetcher to branch module branch instruction
 signal BM_PC_OVERWRITE                  : std_logic_vector(15 downto 0); -- New PC value from branch calculation to overwrite PC register value
+signal BM_BR_EN                         : std_logic;                     -- Branch calculation enable, this is on when a branch is being determined
 signal ID_opcode, EX_opcode, 
     MEM_opcode, WB_opcode               : std_logic_vector(6 downto 0);  -- opcode during various stages
 signal ID_ra, ID_rb, ID_rc, 
@@ -153,7 +158,7 @@ MAINCONT    :   controller port map(clk=>clk, pipe_clk=>EXMEM_clk, rst=>rst, ID_
                                     instr_mem_sel=>instr_mem_sel, io_sel=>io_sel, ram_ena=>ram_ena,
                                     ram_enb=>ram_enb, we=>ram_we, br_pc => IF_BR_PC, br_instr => IF_BR_INSTR, pc_out => BM_PC_OVERWRITE,
                                     pc_br_overwrite => pc_overwrite_en,r7_in => EX_DATA1, r7_out => SUBROUTINE_R7_WRITEBACK,
-                                    reg_data_in => EX_DATA2, n_flag => EX_FLAGS(1), z_flag => EX_FLAGS(2));
+                                    reg_data_in => EX_DATA2, n_flag => EX_FLAGS(1), z_flag => EX_FLAGS(2), br_calc_en => BM_BR_EN);
                                    
 
 -- -- Stalls according to the set bit position 0=IFID, 1=IDEX, 2=EXMEM, 3=MEMWB                                    
@@ -174,7 +179,8 @@ PC : theregister port map (clk=>IFID_CLK, d_in => IF_PC_OUT, d_out => IF_PC_IN, 
 --IF_INSTR <= DEBUG_INSTR_IN;
 I_FETCH :     InstructionFetcher port map(M_INSTR=>RAM_FROM_B, clk=>IFID_CLK, INSTR=>IF_INSTR, M_ADDR=>RAM_ADDR_B, 
                                           rst=>rst, pc_in=>IF_PC_IN, pc_out=>IF_PC_OUT, br_instr => IF_BR_INSTR,
-                                          br_pc => IF_BR_PC, bubble=>bubble);                               
+                                          br_pc => IF_BR_PC, bubble=>bubble,PC_OVERWRITE_EN => pc_overwrite_en,
+                                          PC_OVERWRITE_VAL => BM_PC_OVERWRITE, BR_CALC_EN => BM_BR_EN);                               
                                           
 R_IFID  :     theregister        port map(clk=>IFID_clk, rst=>rst, d_in=>IF_INSTR, d_out=>ID_INSTR); -- IF/ID stage register                                       
 --==============================================================================

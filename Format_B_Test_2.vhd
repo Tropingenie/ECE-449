@@ -24,21 +24,34 @@ architecture Behavioral of Format_B_Test_2 is
 
 --COMPONENT DECLARATIONS HERE--
 component Processor port(
-
     clk, rst : in std_logic;
-    ROM_FROM, RAM_FROM_A, RAM_FROM_B, IN_PORT, DEBUG_INSTR_IN : in std_logic_vector(15 downto 0);
-    RAM_TO, OUT_PORT, RAM_ADDR_A, RAM_ADDR_B : out std_logic_vector(15 downto 0));
-    
+    ROM_FROM, RAM_FROM_A, RAM_FROM_B, IN_PORT : in std_logic_vector(15 downto 0);
+    RAM_TO, OUT_PORT, RAM_ADDR_A, RAM_ADDR_B  : out std_logic_vector(15 downto 0);
+    ram_ena, ram_enb, rom_en, ram_we          : out std_logic
 end component;
 
 --SIGNAL DECLARATIONS HERE--
     signal clk, rst : std_logic;
-    signal ROM_FROM, RAM_FROM_A, RAM_FROM_B, IN_PORT, DEBUG_INSTR_IN : std_logic_vector(15 downto 0);
+    signal ROM_FROM, RAM_FROM_A, RAM_FROM_B, IN_PORT: std_logic_vector(15 downto 0);
     signal RAM_TO, OUT_PORT, RAM_ADDR_A, RAM_ADDR_B : std_logic_vector(15 downto 0);
+    signal ram_ena, ram_enb, rom_en, ram_we         : std_logic;
     
 begin
 
-    UUT: processor port map(clk=>clk,rst=>rst,ROM_FROM=>ROM_FROM,RAM_FROM_A=>RAM_FROM_A,RAM_FROM_B=>RAM_FROM_B,IN_PORT=>IN_PORT,DEBUG_INSTR_IN=>DEBUG_INSTR_IN,RAM_TO=>RAM_TO,OUT_PORT=>OUT_PORT,RAM_ADDR_A=>RAM_ADDR_A,RAM_ADDR_B=>RAM_ADDR_B);
+    UUT: processor port map(
+    clk=>clk,rst=>rst,
+    ROM_FROM=>ROM_FROM,
+    RAM_FROM_A=>RAM_FROM_A,
+    RAM_FROM_B=>RAM_FROM_B,
+    IN_PORT=>IN_PORT,
+    RAM_TO=>RAM_TO,
+    OUT_PORT=>OUT_PORT,
+    RAM_ADDR_A=>RAM_ADDR_A,
+    RAM_ADDR_B=>RAM_ADDR_B,
+    ram_ena=>ram_ena,
+    ram_enb=>ram_enb,
+    rom_en=>rom_en,
+    ram_we=>ram_we);
 
     process begin   --Clocking process, 500MhZ duty cycle
         clk <= '0';
@@ -49,7 +62,7 @@ begin
     
     process begin   --behavioural process
         rst <= '0';
-        DEBUG_INSTR_IN <= "0000000000000000";
+        RAM_FROM_B <= "0000000000000000";
         wait until (clk='1' and clk'event);
         rst <= '1';
         wait until (clk='1' and clk'event);
@@ -59,227 +72,227 @@ begin
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "1000110100001010"; --BR.SUB R4,10
+        RAM_FROM_B <= "1000110100001010"; --BR.SUB R4,10
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "1000000000000000"; --BRR 0
+        RAM_FROM_B <= "1000000000000000"; --BRR 0
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000001010001101"; --ADD R2, R1, R5
+        RAM_FROM_B <= "0000001010001101"; --ADD R2, R1, R5
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000011001000010"; --MUL R1, R0, R2
+        RAM_FROM_B <= "0000011001000010"; --MUL R1, R0, R2
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000010110110101"; --SUB R6, R5, R5
+        RAM_FROM_B <= "0000010110110101"; --SUB R6, R5, R5
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000111110000000"; --TEST R6
+        RAM_FROM_B <= "0000111110000000"; --TEST R6
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "1000010000000010"; --BRR.z 2
+        RAM_FROM_B <= "1000010000000010"; --BRR.z 2
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "1000000111111011"; --BRR -5
+        RAM_FROM_B <= "1000000111111011"; --BRR -5
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "0000000000000000"; --NO OP
+        RAM_FROM_B <= "0000000000000000"; --NO OP
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
         wait until (clk='1' and clk'event);
-        DEBUG_INSTR_IN <= "1000111000000000"; --Return
+        RAM_FROM_B <= "1000111000000000"; --Return
         wait;
     end process;
 end Behavioral;

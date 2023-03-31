@@ -1,6 +1,3 @@
-
-
-
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
@@ -13,23 +10,30 @@ architecture Behavioral of Processor_testbench is
 
 --COMPONENT DECLARATIONS HERE--
 component Processor port(
-
     clk, rst : in std_logic;
     ROM_FROM, RAM_FROM_A, RAM_FROM_B, IN_PORT : in std_logic_vector(15 downto 0);
-    RAM_TO, OUT_PORT, RAM_ADDR_A, RAM_ADDR_B : out std_logic_vector(15 downto 0));
-    
+    RAM_TO, OUT_PORT, RAM_ADDR_A, RAM_ADDR_B  : out std_logic_vector(15 downto 0)
+    );
 end component;
 
 --SIGNAL DECLARATIONS HERE--
     signal clk, rst : std_logic;
-    signal ROM_FROM, RAM_FROM_A, RAM_FROM_B, IN_PORT, DEBUG_INSTR_IN : std_logic_vector(15 downto 0);
+    signal ROM_FROM, RAM_FROM_A, RAM_FROM_B, IN_PORT: std_logic_vector(15 downto 0);
     signal RAM_TO, OUT_PORT, RAM_ADDR_A, RAM_ADDR_B : std_logic_vector(15 downto 0);
     
- 
 begin
 
-    UUT: processor port map(clk=>clk,rst=>rst,ROM_FROM=>ROM_FROM,RAM_FROM_A=>RAM_FROM_A,RAM_FROM_B=>RAM_FROM_B,IN_PORT=>IN_PORT,RAM_TO=>RAM_TO,OUT_PORT=>OUT_PORT,RAM_ADDR_A=>RAM_ADDR_A,RAM_ADDR_B=>RAM_ADDR_B);
-
+    UUT: processor port map(
+    clk=>clk,rst=>rst,
+    ROM_FROM=>ROM_FROM,
+    RAM_FROM_A=>RAM_FROM_A,
+    RAM_FROM_B=>RAM_FROM_B,
+    IN_PORT=>IN_PORT,
+    RAM_TO=>RAM_TO,
+    OUT_PORT=>OUT_PORT,
+    RAM_ADDR_A=>RAM_ADDR_A,
+    RAM_ADDR_B=>RAM_ADDR_B);
+    
     process begin
     rst <= '1';
     wait for 20 us;

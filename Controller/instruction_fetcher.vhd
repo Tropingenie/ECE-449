@@ -32,6 +32,7 @@ port(
     --Branch Output Signals
     BR_INSTR        : out std_logic_vector(15 downto 0);      -- Branch instruction opcode value
     BR_PC           : out std_logic_vector(15 downto 0);      -- Branch instruction PC value
+    BR_CALC_EN      : in std_logic;                           -- Branch calculation enable, this is on when a branch is being determined
     PC_OVERWRITE_VAL: in std_logic_vector (15 downto 0);      -- Branch module PC value to be written to PC
     PC_OVERWRITE_EN : in std_logic                            -- Branch module PC overwrite enable
 );
@@ -55,8 +56,10 @@ begin
             
         elsif RISING_EDGE(clk) then                                     -- Update PC for the instruction received on the falling edge of t
             old_pc <= PC_IN;
+            if(br_calc_en = '0')then
             new_pc <= std_logic_vector(unsigned(old_pc) + x"0002"); 
-    
+            end if;
+            
             if M_INSTR(15) = '1' then                                   -- Check for branch op in current instr on rising clock
                BR_INSTR <= M_INSTR(15 downto 0);
                BR_PC   <= new_pc;
