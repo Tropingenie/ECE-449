@@ -44,7 +44,8 @@ port(
     ID_opcode, WB_opcode            : in std_logic_vector(6 downto 0);
     ID_rd_1, ID_rd_2, ID_wr, WB_wr  : in std_logic_vector(2 downto 0);
     clk, rst, stall_IFID            : in std_logic;
-    stall_IDEX                      : out std_logic                                  
+    stall_IDEX                      : out std_logic;
+    wb_control                      : in std_logic_vector(15 downto 0)                                  
 );
 end component;
 
@@ -98,7 +99,7 @@ signal last_wb_bits, delay_wb_bits, current_wb_bits : std_logic_vector(15 downto
 begin
 
 REG_ARB     :  RegisterArbitrator port map(ID_opcode=>ID_opcode, WB_opcode=>WB_opcode, id_rd_1=>id_rd_1, id_rd_2=>id_rd_2, id_wr=>id_wr, wb_wr=>wb_wr,
-                                           clk=>clk, rst=>rst, stall_IFID=>stall_stage(0), stall_IDEX=>REG_STALL); 
+                                           clk=>clk, rst=>rst, stall_IFID=>stall_stage(0), stall_IDEX=>REG_STALL, wb_control => MEMWB_CONTROL_BITS_OUT); 
                                           
 --STALL_CONT :  StallController port map(stall_stage=>stall_stage, stall_enable=>stall_en); -- Stall pipeline if necessary
 

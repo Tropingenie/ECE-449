@@ -129,16 +129,10 @@ signal BM_BR_EN                         : std_logic;                     -- Bran
 signal ID_opcode, EX_opcode, 
     MEM_opcode, WB_opcode               : std_logic_vector(6 downto 0);  -- opcode during various stages
 signal ID_ra, ID_rb, ID_rc, 
-<<<<<<< HEAD
-    EX_ra, MEM_ra, WB_ra                : std_logic_vector(2 downto 0);  -- Register addresses in various stages
-signal ID_imm                           : std_logic_vector(3 downto 0);  -- Immediate value decoded in the ID stage
-signal ID_WRITE_EN                      : std_logic;                     -- Register file write enable (for writeback)
-=======
     EX_ra, MEM_ra, WB_ra                : std_logic_vector(2 downto 0); -- Register addresses in various stages
 signal ID_imm_a                         : std_logic_vector(3 downto 0); -- Immediate value decoded in the ID stage (Format A3)
 signal ID_imm_l                         : std_logic_vector(8 downto 0); -- Immediate value decoded in the ID stage (Format L1)
 signal ID_WRITE_EN                      : std_logic; -- Register file write enable (for writeback)
->>>>>>> 072fd37 (Semi functional LOADIMM and Format L testbench 0)
 signal EX_AR, MEM_AR                    : std_logic_vector(15 downto 0); -- AR in various stages
 signal ID_data1, ID_data2, EX_data1, 
     EX_data2                            : std_logic_vector(15 downto 0); -- Data from register file for various stages
@@ -201,13 +195,8 @@ R_IFID  :     theregister        port map(clk=>IFID_clk, rst=>rst, d_in=>IF_INST
 -- Instruction Decode
 
 I_DECODE:     InstructionDecoder port map(instruction=>ID_INSTR, opcode_out=>ID_opcode, 
-<<<<<<< HEAD
-                                          rd_1=>ID_rb, rd_2=>ID_rc, ra=>ID_ra, imm=>ID_imm);
-                                     
-=======
                                           rd_1=>ID_rb, rd_2=>ID_rc, ra=>ID_ra, imm_a=>ID_imm_a, imm_l=>ID_imm_l);
 
->>>>>>> 072fd37 (Semi functional LOADIMM and Format L testbench 0)
 REG_FILE:     register_file      port map(clk=>clk, rst=>rst, rd_index1=>ID_rb, 
                                           rd_index2=>ID_rsel, rd_data1=>ID_data1, 
                                           rd_data2=>ID_RC_DATA, wr_index=>WB_ra, 

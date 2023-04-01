@@ -49,7 +49,7 @@ process(clk, rst) begin
 --                counter <= 0;
 --                alu_stall_enable <= '1';
                     null;        
-             when "0000101" | "0000110" =>  -- SHR, SHL
+             when "0000101" | "0000110" | "0010010" =>  -- SHR, SHL, LOADIMM
                 assert false report "Debug: ALU retarder detected shift" severity note; 
                 counter <= 3;
                 alu_stall_enable <= '1';

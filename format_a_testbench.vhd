@@ -102,7 +102,7 @@ begin
             when x"0002" => RAM_FROM_B <= "0010010100000101"; -- LOADIMM.UPPER 5
             when x"0004" => RAM_FROM_B <= "0010011001111000"; -- MOV R1, R7
             when x"0006" => RAM_FROM_B <= "0010010000000000"; -- LOADIMM.LOWER 0
-            when x"0008" => RAM_FROM_B <= "0010010000000110"; -- LOADIMM.UPPER 6
+            when x"0008" => RAM_FROM_B <= "0010010100000110"; -- LOADIMM.UPPER 6
             when x"000A" => RAM_FROM_B <= "0010011010111000"; -- MOV R2, R7
 --            when x"000C" => RAM_FROM_B <= "0000010001011010"; -- STORE R2, R1
 --            when x"000E" => RAM_FROM_B <= "0000000000000000"; -- LOAD R3, R2
