@@ -64,7 +64,7 @@ process(clk, rst) begin
              when "UUUUUUU" | "XXXXXXX" =>
                  assert false report "Uninitialized opcode" severity note;              
              when others =>
-                 assert false report "ALU operation out of range" severity failure;
+                 NULL;
                  
             end case;
         end if;

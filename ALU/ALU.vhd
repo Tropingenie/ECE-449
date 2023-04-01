@@ -95,8 +95,12 @@ begin
                     data3 <= X"0000";
                 elsif (to_integer(signed(data1)) < 0)then
                     n_flag <= '1';
+                    mult_ofr <= signed(data1) * data2;
+                    data3 <= mult_ofr(15 downto 0);
                 elsif (to_integer(signed(data2)) < 0) then
-                    n_flag <= '1';
+                     n_flag <= '1';
+                     mult_ofr <= data1 * signed(data2);
+                     data3 <= mult_ofr(15 downto 0);
                 else
                     mult_ofr <= data1 * data2;
                     data3 <= mult_ofr(15 downto 0);
